@@ -15,7 +15,8 @@
     "paths": {
       "@renderer/*": ["src/renderer/*"],
       "@shared/*": ["src/shared/*"]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "src/renderer/**/*",
