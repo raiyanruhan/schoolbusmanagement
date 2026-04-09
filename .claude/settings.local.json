@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(dir D:\\\\Ruhan\\\\School Bus\\\\node_modules\\\\better-sqlite3\\\\build:*)",
+      "Bash(cmd:*)"
+    ]
+  }
+}
