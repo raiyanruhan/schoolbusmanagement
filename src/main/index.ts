@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb, closeDb, getSqlite } from './db'
@@ -51,6 +51,25 @@ app.whenReady().then(() => {
   initDb()
   seedInitialData(getSqlite())
   registerAllIpcHandlers()
+
+  // ── Display board window ────────────────────────────────────────────────
+  ipcMain.handle('window:openDisplay', () => {
+    const displayWin = new BrowserWindow({
+      width: 1280,
+      height: 800,
+      title: 'School Bus — Display Board',
+      webPreferences: {
+        preload: join(__dirname, '../preload/index.mjs'),
+        contextIsolation: true,
+        nodeIntegration: false
+      }
+    })
+    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+      displayWin.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/display`)
+    } else {
+      displayWin.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/display' })
+    }
+  })
 
   createWindow()
 

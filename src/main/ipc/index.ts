@@ -3,6 +3,7 @@ import { registerRouteHandlers } from './route.ipc'
 import { registerShiftHandlers } from './shift.ipc'
 import { registerSessionHandlers } from './session.ipc'
 import { registerPlannerHandlers } from './planner.ipc'
+import { registerAutoPlannerHandlers } from './autoPlanner.ipc'
 
 export function registerAllIpcHandlers(): void {
   registerBusHandlers()
@@ -10,5 +11,6 @@ export function registerAllIpcHandlers(): void {
   registerShiftHandlers()
   registerSessionHandlers()
   registerPlannerHandlers()
+  registerAutoPlannerHandlers()
   console.log('[IPC] All handlers registered')
 }

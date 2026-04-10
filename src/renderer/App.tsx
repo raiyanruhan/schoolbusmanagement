@@ -1,22 +1,22 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './components/layout/Layout'
 import Dashboard from './pages/Dashboard'
-import BusManagement from './pages/BusManagement'
-import RouteManagement from './pages/RouteManagement'
-import ShiftManagement from './pages/ShiftManagement'
 import Planner from './pages/Planner'
+import Settings from './pages/Settings'
+import DisplayBoard from './pages/DisplayBoard'
+import Toast from './components/ui/Toast'
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="buses" element={<BusManagement />} />
-        <Route path="routes" element={<RouteManagement />} />
-        <Route path="shifts" element={<ShiftManagement />} />
-        <Route path="planner" element={<Planner />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/planner" element={<Planner />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings/:tab" element={<Settings />} />
+        <Route path="/display" element={<DisplayBoard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <Toast />
+    </>
   )
 }

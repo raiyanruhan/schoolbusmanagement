@@ -7,7 +7,9 @@ import type {
   CreateRouteInput, UpdateRouteInput,
   CreateStopInput, UpdateStopInput, ReorderStopsInput,
   CreateShiftInput, UpdateShiftInput, UpsertStopConfigInput,
-  CreateRunInput
+  CreateRunInput,
+  RunDirection, AssignmentStrategy,
+  EngineOutput, ProposedRun
 } from '../shared/types'
 
 // The API exposed to the renderer — strictly typed
@@ -81,6 +83,29 @@ const api = {
       ipcRenderer.invoke('planner:createRun', input),
     deleteRun: (id: string): Promise<IpcResult<void>> =>
       ipcRenderer.invoke('planner:deleteRun', id)
+  },
+
+  // ── Auto-Planner ───────────────────────────────────────────────────────
+  autoPlanner: {
+    generate: (input: {
+      session_id: string
+      shift_id: string
+      direction: RunDirection
+      strategy: AssignmentStrategy
+    }): Promise<IpcResult<EngineOutput>> =>
+      ipcRenderer.invoke('autoPlanner:generate', input),
+    approve: (input: {
+      session_id: string
+      shift_id: string
+      proposedRuns: ProposedRun[]
+    }): Promise<IpcResult<Run[]>> =>
+      ipcRenderer.invoke('autoPlanner:approve', input)
+  },
+
+  // ── Window management ──────────────────────────────────────────────────
+  window: {
+    openDisplay: (): Promise<void> =>
+      ipcRenderer.invoke('window:openDisplay')
   }
 }
 

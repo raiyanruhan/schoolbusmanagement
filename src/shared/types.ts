@@ -232,3 +232,57 @@ export interface DashboardStats {
   totalStudents: number
   runsToday: number
 }
+
+// ─── Engine / Auto-Planner Types ──────────────────────────────────────────────
+
+export type AssignmentStrategy = 'LARGEST_ROUTE_FIRST' | 'SMALLEST_ROUTE_FIRST' | 'SEQUENCE_ORDER'
+export type WarningType = 'OVERLOADED' | 'UNDERFILLED' | 'NO_AVAILABLE_BUS' | 'GENDER_MISMATCH'
+
+export interface EngineWarning {
+  type: WarningType
+  severity: 'WARNING' | 'CRITICAL'
+  message: string
+  context?: string
+}
+
+export interface ProposedRun {
+  temp_id: string
+  bus_id: string
+  bus_number: string
+  route_id: string
+  route_name: string
+  route_color: string
+  direction: RunDirection
+  gender: RunGender
+  stops: Array<{ stop_id: string; stop_name: string; student_count: number }>
+  totalStudents: number
+  capacity: number
+  overload_limit: number
+  isOverloaded: boolean
+  warnings: EngineWarning[]
+}
+
+export interface UnassignedStopInfo {
+  stop_id: string
+  stop_name: string
+  route_id: string
+  route_name: string
+  reason: string
+  planned_boys: number
+  planned_girls: number
+}
+
+export interface EngineSummary {
+  totalBusesUsed: number
+  totalStudentsAssigned: number
+  totalStudentsUnassigned: number
+  overloadedRuns: number
+  splitRoutes: number
+}
+
+export interface EngineOutput {
+  proposedRuns: ProposedRun[]
+  unassignedStops: UnassignedStopInfo[]
+  warnings: EngineWarning[]
+  summary: EngineSummary
+}

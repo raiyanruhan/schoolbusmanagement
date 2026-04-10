@@ -94,6 +94,59 @@ export const runRepo = {
     return this.getRunById(id)!
   },
 
+  createRunAuto(input: {
+    session_id: string
+    shift_id: string
+    bus_id: string
+    route_id: string
+    direction: Run['direction']
+    gender: Run['gender']
+    stop_ids: string[]
+    stop_student_counts: number[]
+    overload_limit?: number
+    assigned_by: Run['assigned_by']
+    notes?: string
+  }): Run {
+    const db = getDb()
+    const id = uuidv4()
+    const ts = now()
+
+    db.insert(runs).values({
+      id,
+      session_id: input.session_id,
+      shift_id: input.shift_id,
+      bus_id: input.bus_id,
+      route_id: input.route_id,
+      direction: input.direction,
+      gender: input.gender,
+      type: 'REGULAR',
+      status: 'SCHEDULED',
+      planned_depart: null,
+      planned_return: null,
+      actual_depart: null,
+      actual_return: null,
+      overload_limit: input.overload_limit ?? 0,
+      assigned_by: input.assigned_by,
+      notes: input.notes ?? null,
+      created_at: ts,
+      updated_at: ts
+    }).run()
+
+    // Insert RunStops with actual student counts from engine
+    input.stop_ids.forEach((stopId, index) => {
+      db.insert(runStops).values({
+        id: uuidv4(),
+        run_id: id,
+        stop_id: stopId,
+        sequence_order: index + 1,
+        student_count: input.stop_student_counts[index] ?? 0,
+        gender: input.gender
+      }).run()
+    })
+
+    return this.getRunById(id)!
+  },
+
   updateRunStatus(id: string, status: Run['status']): void {
     getDb().update(runs)
       .set({ status, updated_at: now() })
