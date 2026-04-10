@@ -7,6 +7,7 @@ export function registerRouteHandlers(): void {
   ipcMain.handle('route:create', (_e, input) => routeService.createRoute(input))
   ipcMain.handle('route:update', (_e, input) => routeService.updateRoute(input))
   ipcMain.handle('route:delete', (_e, id) => routeService.deleteRoute(id))
+  ipcMain.handle('route:deleteAll', () => routeService.deleteAllRoutes())
 
   ipcMain.handle('stop:create', (_e, input) => routeService.createStop(input))
   ipcMain.handle('stop:update', (_e, input) => routeService.updateStop(input))

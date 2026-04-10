@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Clock, ChevronRight, Save } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { Plus, Pencil, Clock, ChevronRight, Save, FileSpreadsheet, Upload, Trash2 } from 'lucide-react'
 import Modal from '../ui/Modal'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import { useUiStore } from '../../store/uiStore'
 import type { Shift, StopConfig, GenderMode, CreateShiftInput, UpdateShiftInput } from '../../../shared/types'
 
@@ -299,6 +300,9 @@ export default function ShiftManagement() {
   const [formLoading, setFormLoading] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editShift, setEditShift] = useState<Shift | null>(null)
+  const [deleteShift, setDeleteShift] = useState<Shift | null>(null)
+  const [importing, setImporting] = useState(false)
+  const importFileRef = useRef<HTMLInputElement>(null)
 
   const fetchShifts = useCallback(async () => {
     setLoading(true)
@@ -335,6 +339,45 @@ export default function ShiftManagement() {
     } else setFormError(result.error)
   }
 
+  const handleDelete = async () => {
+    if (!deleteShift) return
+    const result = await window.api.shift.delete(deleteShift.id)
+    if (result.success) {
+      if (selected?.id === deleteShift.id) setSelected(null)
+      fetchShifts()
+      showToast(`Shift "${deleteShift.name}" deleted`, 'info')
+    } else {
+      showToast(result.error, 'error')
+    }
+    setDeleteShift(null)
+  }
+
+  const handleImportConfigs = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selected) return
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setImporting(true)
+    try {
+      const buffer = await file.arrayBuffer()
+      const result = await window.api.excel.importShiftConfigs({ shift_id: selected.id, buffer })
+      if (result.success) {
+        const { updated, notFound } = result.data
+        showToast(
+          `${updated} stop config${updated !== 1 ? 's' : ''} imported` +
+          (notFound.length > 0 ? ` · ${notFound.length} stop${notFound.length !== 1 ? 's' : ''} not found` : '')
+        )
+        // Re-select to refresh stop config panel
+        setSelected({ ...selected })
+      } else {
+        showToast(result.error, 'error')
+      }
+    } catch {
+      showToast('Failed to read file', 'error')
+    }
+    setImporting(false)
+  }
+
   return (
     <div className="flex h-full">
       {/* Left: Shift list */}
@@ -350,21 +393,32 @@ export default function ShiftManagement() {
         ) : (
           <div className="flex-1 overflow-y-auto">
             {shifts.map((shift) => (
-              <button
+              <div
                 key={shift.id}
-                onClick={() => setSelected(shift)}
-                className={`w-full text-left px-4 py-4 border-b border-gray-50 flex items-center gap-3 transition-colors
+                className={`border-b border-gray-50 flex items-center transition-colors
                   ${selected?.id === shift.id ? 'bg-brand-50 border-l-2 border-l-brand-500' : 'hover:bg-gray-50'}`}
               >
-                <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-brand-700" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{shift.name}</p>
-                  <p className="text-xs text-gray-400">{shift.gender_mode}</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
-              </button>
+                <button
+                  onClick={() => setSelected(shift)}
+                  className="flex-1 text-left px-4 py-4 flex items-center gap-3"
+                >
+                  <div className="w-9 h-9 bg-brand-100 rounded-lg flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-brand-700" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{shift.name}</p>
+                    <p className="text-xs text-gray-400">{shift.gender_mode}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                </button>
+                <button
+                  onClick={() => setDeleteShift(shift)}
+                  className="p-2 mr-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                  title="Delete shift"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ))}
             {shifts.length === 0 && <div className="p-6 text-center text-gray-400 text-sm">No shifts yet</div>}
           </div>
@@ -395,6 +449,22 @@ export default function ShiftManagement() {
                   <span className="text-xs text-gray-400">Overload: +{selected.default_overload}</span>
                 </div>
               </div>
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleImportConfigs}
+              />
+              <button
+                onClick={() => importFileRef.current?.click()}
+                disabled={importing}
+                className="btn-secondary btn-sm"
+                title="Import student counts from Excel"
+              >
+                {importing ? <Upload className="w-3.5 h-3.5 animate-bounce" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+                {importing ? 'Importing...' : 'Import'}
+              </button>
               <button onClick={() => { setFormError(null); setEditShift(selected) }} className="btn-secondary btn-sm">
                 <Pencil className="w-3.5 h-3.5" /> Edit Shift
               </button>
@@ -421,6 +491,15 @@ export default function ShiftManagement() {
           <ShiftForm initial={editShift} onSubmit={handleEdit} onCancel={() => setEditShift(null)} loading={formLoading} error={formError} />
         )}
       </Modal>
+      <ConfirmDialog
+        open={!!deleteShift}
+        onClose={() => setDeleteShift(null)}
+        onConfirm={handleDelete}
+        title="Delete Shift"
+        message={`Delete "${deleteShift?.name}"? All runs and stop configs for this shift will also be permanently deleted.`}
+        confirmLabel="Delete"
+        danger
+      />
     </div>
   )
 }

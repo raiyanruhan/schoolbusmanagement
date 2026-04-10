@@ -1,6 +1,6 @@
 import { eq, and, asc } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
-import { getDb } from '../db'
+import { getDb, getSqlite } from '../db'
 import { shifts, stopConfigs } from '../db/schema'
 import type { Shift, StopConfig, CreateShiftInput, UpdateShiftInput, UpsertStopConfigInput } from '../../shared/types'
 
@@ -64,6 +64,19 @@ export const shiftRepo = {
       .where(eq(shifts.id, input.id))
       .run()
     return this.getById(input.id)!
+  },
+
+  delete(id: string): void {
+    const sqlite = getSqlite()
+    // Delete run_stops for all runs in this shift (no cascade on run_stops.run_id→runs or shift)
+    const shiftRuns = sqlite.prepare('SELECT id FROM runs WHERE shift_id = ?').all(id) as { id: string }[]
+    for (const run of shiftRuns) {
+      sqlite.prepare('DELETE FROM run_stops WHERE run_id = ?').run(run.id)
+    }
+    // Delete runs for this shift (no cascade from shifts→runs)
+    sqlite.prepare('DELETE FROM runs WHERE shift_id = ?').run(id)
+    // Delete the shift — SQLite cascades to stop_configs
+    getDb().delete(shifts).where(eq(shifts.id, id)).run()
   },
 
   // ── StopConfigs ──────────────────────────────────────────────────────────

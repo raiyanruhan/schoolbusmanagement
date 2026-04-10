@@ -1,6 +1,6 @@
 import { eq, asc } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
-import { getDb } from '../db'
+import { getDb, getSqlite } from '../db'
 import { routes, stops } from '../db/schema'
 import type { Route, Stop, CreateRouteInput, UpdateRouteInput, CreateStopInput, UpdateStopInput, ReorderStopsInput } from '../../shared/types'
 
@@ -52,7 +52,25 @@ export const routeRepo = {
     return this.getRouteById(input.id)!
   },
 
+  deleteAllRoutes(): void {
+    const sqlite = getSqlite()
+    // Clear everything that references stops or routes (no cascades defined)
+    sqlite.prepare('DELETE FROM run_stops').run()
+    sqlite.prepare('DELETE FROM runs').run()
+    // Delete all routes — SQLite cascades to stops and stop_configs
+    sqlite.prepare('DELETE FROM routes').run()
+  },
+
   deleteRoute(id: string): void {
+    const sqlite = getSqlite()
+    // Delete run_stops for any run referencing this route's stops
+    const routeStops = this.getStopsByRoute(id)
+    for (const stop of routeStops) {
+      sqlite.prepare('DELETE FROM run_stops WHERE stop_id = ?').run(stop.id)
+    }
+    // Delete runs that reference this route (runs.route_id has no cascade)
+    sqlite.prepare('DELETE FROM runs WHERE route_id = ?').run(id)
+    // Delete the route — SQLite cascades to stops and stop_configs
     getDb().delete(routes).where(eq(routes.id, id)).run()
   },
 
@@ -114,6 +132,9 @@ export const routeRepo = {
   },
 
   deleteStop(id: string): void {
+    // Delete run_stops (no cascade defined on stop_id FK)
+    getSqlite().prepare('DELETE FROM run_stops WHERE stop_id = ?').run(id)
+    // Delete the stop — SQLite cascades to stop_configs
     getDb().delete(stops).where(eq(stops.id, id)).run()
   }
 }

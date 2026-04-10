@@ -15,7 +15,8 @@
   "dependencies": {
     "better-sqlite3": "^12.8.0",
     "drizzle-orm": "^0.31.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@dnd-kit/core": "^6.1.0",

@@ -67,6 +67,16 @@ export const shiftService = {
     }
   },
 
+  delete(id: unknown): IpcResult<void> {
+    try {
+      const shiftId = z.string().uuid().parse(id)
+      shiftRepo.delete(shiftId)
+      return { success: true, data: undefined }
+    } catch (e) {
+      return { success: false, error: String(e) }
+    }
+  },
+
   getStopConfigsByShift(shift_id: unknown): IpcResult<StopConfig[]> {
     try {
       const id = z.string().uuid().parse(shift_id)

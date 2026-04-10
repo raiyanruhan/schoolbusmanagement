@@ -84,6 +84,15 @@ export const routeService = {
     }
   },
 
+  deleteAllRoutes(): IpcResult<void> {
+    try {
+      routeRepo.deleteAllRoutes()
+      return { success: true, data: undefined }
+    } catch (e) {
+      return { success: false, error: String(e) }
+    }
+  },
+
   deleteRoute(id: unknown): IpcResult<void> {
     try {
       const validId = z.string().uuid().parse(id)

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { Plus, Pencil, Trash2, MapPin, GripVertical, ChevronRight, ToggleLeft, ToggleRight } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { Plus, Pencil, Trash2, MapPin, GripVertical, ChevronRight, ToggleLeft, ToggleRight, Upload, FileSpreadsheet, X } from 'lucide-react'
 import Modal from '../ui/Modal'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { useUiStore } from '../../store/uiStore'
@@ -98,11 +98,14 @@ export default function RouteManagement() {
   const [loading, setLoading] = useState(true)
   const [formError, setFormError] = useState<string | null>(null)
   const [formLoading, setFormLoading] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Modals
   const [addRouteOpen, setAddRouteOpen] = useState(false)
   const [editRoute, setEditRoute] = useState<Route | null>(null)
   const [deleteRoute, setDeleteRoute] = useState<Route | null>(null)
+  const [clearAllOpen, setClearAllOpen] = useState(false)
   const [addStopOpen, setAddStopOpen] = useState(false)
   const [editStop, setEditStop] = useState<Stop | null>(null)
   const [deleteStop, setDeleteStop] = useState<Stop | null>(null)
@@ -123,6 +126,44 @@ export default function RouteManagement() {
   }, [])
 
   useEffect(() => { fetchRoutes() }, [fetchRoutes])
+
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setImporting(true)
+    try {
+      const buffer = await file.arrayBuffer()
+      const result = await window.api.excel.importRoutes(buffer)
+      if (result.success) {
+        const { routesCreated, routesExisting, stopsCreated, stopsSkipped } = result.data
+        showToast(
+          `Imported: ${routesCreated} new route${routesCreated !== 1 ? 's' : ''}, ` +
+          `${stopsCreated} new stop${stopsCreated !== 1 ? 's' : ''}` +
+          (routesExisting > 0 ? ` (${routesExisting} existing routes updated)` : '') +
+          (stopsSkipped > 0 ? `, ${stopsSkipped} skipped` : '')
+        )
+        fetchRoutes()
+      } else {
+        showToast(result.error, 'error')
+      }
+    } catch {
+      showToast('Failed to read file', 'error')
+    }
+    setImporting(false)
+  }
+
+  const handleClearAll = async () => {
+    const result = await window.api.route.deleteAll()
+    if (result.success) {
+      setSelected(null)
+      fetchRoutes()
+      showToast('All routes cleared', 'info')
+    } else {
+      showToast(result.error, 'error')
+    }
+    setClearAllOpen(false)
+  }
 
   const handleSelectRoute = (route: Route) => {
     loadSelected(route.id)
@@ -236,9 +277,36 @@ export default function RouteManagement() {
       <div className="w-72 border-r border-gray-200 bg-white flex flex-col">
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="section-title">Routes</h2>
-          <button onClick={() => { setFormError(null); setAddRouteOpen(true) }} className="btn-primary btn-sm">
-            <Plus className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleExcelImport}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+              className="btn-secondary btn-sm"
+              title="Import routes & stops from Excel"
+            >
+              {importing ? <Upload className="w-3.5 h-3.5 animate-bounce" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+              {importing ? 'Importing...' : 'Import Excel'}
+            </button>
+            {routes.length > 0 && (
+              <button
+                onClick={() => setClearAllOpen(true)}
+                className="btn-sm px-2 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+                title="Delete all routes"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button onClick={() => { setFormError(null); setAddRouteOpen(true) }} className="btn-primary btn-sm">
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -384,6 +452,16 @@ export default function RouteManagement() {
       </Modal>
       <ConfirmDialog open={!!deleteStop} onClose={() => setDeleteStop(null)} onConfirm={handleDeleteStop}
         title="Delete Stop" message={`Delete stop "${deleteStop?.name}"?`} confirmLabel="Delete" danger />
+
+      <ConfirmDialog
+        open={clearAllOpen}
+        onClose={() => setClearAllOpen(false)}
+        onConfirm={handleClearAll}
+        title="Clear All Routes"
+        message={`Delete all ${routes.length} route${routes.length !== 1 ? 's' : ''} and every stop inside them? All associated runs will also be removed. This cannot be undone.`}
+        confirmLabel="Clear All"
+        danger
+      />
     </div>
   )
 }

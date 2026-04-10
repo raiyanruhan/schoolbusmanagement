@@ -53,6 +53,14 @@ export const runRepo = {
     } as unknown as RunWithDetails
   },
 
+  getAllRunsWithDetails(session_id: string): RunWithDetails[] {
+    const sessionRuns = this.getRunsBySession(session_id)
+    return sessionRuns
+      .filter((r) => r.status !== 'CANCELLED')
+      .map((r) => this.getRunWithDetails(r.id))
+      .filter((r): r is RunWithDetails => r !== null)
+  },
+
   createRun(input: CreateRunInput): Run {
     const db = getDb()
     const id = uuidv4()

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Bus } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { Plus, Pencil, Trash2, Bus, FileSpreadsheet, Upload } from 'lucide-react'
 import Modal from '../ui/Modal'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { useUiStore } from '../../store/uiStore'
@@ -96,6 +96,8 @@ export default function BusManagement() {
   const [addOpen, setAddOpen] = useState(false)
   const [editBus, setEditBus] = useState<BusType | null>(null)
   const [deleteBus, setDeleteBus] = useState<BusType | null>(null)
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchBuses = async () => {
     setLoading(true)
@@ -148,6 +150,30 @@ export default function BusManagement() {
     }
   }
 
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setImporting(true)
+    try {
+      const buffer = await file.arrayBuffer()
+      const result = await window.api.excel.importBuses(buffer)
+      if (result.success) {
+        const { created, skipped } = result.data
+        showToast(
+          `${created} bus${created !== 1 ? 'es' : ''} imported` +
+          (skipped > 0 ? ` · ${skipped} already existed` : '')
+        )
+        fetchBuses()
+      } else {
+        showToast(result.error, 'error')
+      }
+    } catch {
+      showToast('Failed to read file', 'error')
+    }
+    setImporting(false)
+  }
+
   const handleDelete = async () => {
     if (!deleteBus) return
     const result = await window.api.bus.delete(deleteBus.id)
@@ -168,9 +194,27 @@ export default function BusManagement() {
           <h1 className="page-title">Fleet Management</h1>
           <p className="text-gray-500 text-sm mt-1">{buses.length} bus{buses.length !== 1 ? 'es' : ''} registered</p>
         </div>
-        <button onClick={() => { setFormError(null); setAddOpen(true) }} className="btn-primary">
-          <Plus className="w-4 h-4" /> Add Bus
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleExcelImport}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="btn-secondary"
+            title="Import buses from Excel (Bus No, Capacity)"
+          >
+            {importing ? <Upload className="w-4 h-4 animate-bounce" /> : <FileSpreadsheet className="w-4 h-4" />}
+            {importing ? 'Importing...' : 'Import Excel'}
+          </button>
+          <button onClick={() => { setFormError(null); setAddOpen(true) }} className="btn-primary">
+            <Plus className="w-4 h-4" /> Add Bus
+          </button>
+        </div>
       </div>
 
       {/* Table */}

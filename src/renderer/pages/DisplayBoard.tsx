@@ -1,119 +1,102 @@
 import { useEffect, useState, useCallback } from 'react'
-import type { Run, Bus, Route, Shift } from '../../shared/types'
-import { Bus as BusIcon, ArrowRight, ArrowLeft, RefreshCw, Clock } from 'lucide-react'
+import type { RunWithDetails, Shift } from '../../shared/types'
+import { Bus as BusIcon, RefreshCw, AlertCircle } from 'lucide-react'
 
 const REFRESH_INTERVAL = 30_000
 
-interface RunCard {
-  run: Run
-  bus: Bus | undefined
-  route: Route | undefined
-  shift: Shift | undefined
+type DisplayRow = {
+  key: string
+  stops: string[]       // stop names in order
+  boysBus: string
+  girlsBus: string
 }
 
-function genderLabel(g: string) {
-  if (g === 'BOYS') return { label: 'Boys', cls: 'bg-blue-600' }
-  if (g === 'GIRLS') return { label: 'Girls', cls: 'bg-pink-500' }
-  return { label: 'Mixed', cls: 'bg-purple-600' }
-}
+function buildRows(details: RunWithDetails[]): DisplayRow[] {
+  // Map stopId → { stopName, boysBus, girlsBus, sequenceOrder }
+  const stopMap = new Map<string, {
+    name: string
+    seq: number
+    boysBus: string
+    girlsBus: string
+  }>()
 
-function statusColor(s: string) {
-  if (s === 'IN_PROGRESS') return 'bg-green-500'
-  if (s === 'COMPLETED') return 'bg-gray-500'
-  if (s === 'CANCELLED') return 'bg-red-500'
-  return 'bg-yellow-400'
-}
+  for (const run of details) {
+    const busNum = run.bus?.number ?? '—'
+    for (const rs of run.stops) {
+      if (!stopMap.has(rs.stop_id)) {
+        stopMap.set(rs.stop_id, {
+          name: rs.stop?.name ?? rs.stop_id,
+          seq: rs.sequence_order,
+          boysBus: '',
+          girlsBus: ''
+        })
+      }
+      const entry = stopMap.get(rs.stop_id)!
+      if (run.gender === 'BOYS') {
+        entry.boysBus = busNum
+      } else if (run.gender === 'GIRLS') {
+        entry.girlsBus = busNum
+      } else {
+        entry.boysBus = busNum
+        entry.girlsBus = busNum
+      }
+    }
+  }
 
-function DisplayRunCard({ run, bus, route, shift }: RunCard) {
-  const gender = genderLabel(run.gender)
-  const routeColor = route?.color ?? '#6366f1'
+  // Group stops by (boysBus, girlsBus) pair, preserving insertion/sequence order
+  const groupMap = new Map<string, { stops: Array<{ name: string; seq: number }>; boysBus: string; girlsBus: string }>()
 
-  return (
-    <div className="bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 flex flex-col">
-      {/* Color bar */}
-      <div className="h-1.5 w-full" style={{ backgroundColor: routeColor }} />
+  for (const [, entry] of stopMap) {
+    const key = `${entry.boysBus}||${entry.girlsBus}`
+    if (!groupMap.has(key)) {
+      groupMap.set(key, { stops: [], boysBus: entry.boysBus, girlsBus: entry.girlsBus })
+    }
+    groupMap.get(key)!.stops.push({ name: entry.name, seq: entry.seq })
+  }
 
-      <div className="p-4 flex flex-col gap-3 flex-1">
-        {/* Bus number + direction */}
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-0.5">Bus</p>
-            <p className="text-4xl font-black text-white leading-none">{bus?.number ?? '—'}</p>
-          </div>
-          <div className="flex flex-col items-end gap-1.5">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${gender.cls}`}>
-              {gender.label}
-            </span>
-            <span className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full text-gray-900 ${statusColor(run.status)}`}>
-              {run.direction === 'OUTBOUND'
-                ? <><ArrowRight className="w-3 h-3" /> Out</>
-                : <><ArrowLeft className="w-3 h-3" /> In</>}
-            </span>
-          </div>
-        </div>
+  const rows: DisplayRow[] = []
+  for (const [key, group] of groupMap) {
+    group.stops.sort((a, b) => a.seq - b.seq)
+    rows.push({
+      key,
+      stops: group.stops.map((s) => s.name),
+      boysBus: group.boysBus,
+      girlsBus: group.girlsBus
+    })
+  }
 
-        {/* Route */}
-        <div>
-          <p className="text-xs text-gray-500 uppercase tracking-widest font-medium mb-0.5">Route</p>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: routeColor }} />
-            <p className="text-base font-semibold text-gray-100 truncate">{route?.name ?? '—'}</p>
-          </div>
-        </div>
-
-        {/* Shift + depart */}
-        <div className="flex items-center gap-4 text-xs text-gray-400">
-          <span className="truncate">{shift?.name ?? '—'}</span>
-          {run.planned_depart && (
-            <span className="flex items-center gap-1 shrink-0 text-yellow-400 font-medium">
-              <Clock className="w-3 h-3" />
-              {run.planned_depart}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Status strip */}
-      <div className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider text-center ${
-        run.status === 'IN_PROGRESS' ? 'bg-green-500/20 text-green-400' :
-        run.status === 'COMPLETED'   ? 'bg-gray-700 text-gray-400' :
-        run.status === 'CANCELLED'   ? 'bg-red-500/20 text-red-400' :
-                                       'bg-yellow-400/10 text-yellow-400'
-      }`}>
-        {run.status.replace('_', ' ')}
-      </div>
-    </div>
-  )
+  return rows
 }
 
 export default function DisplayBoard() {
-  const [runs, setRuns] = useState<Run[]>([])
-  const [buses, setBuses] = useState<Bus[]>([])
-  const [routes, setRoutes] = useState<Route[]>([])
+  const [details, setDetails] = useState<RunWithDetails[]>([])
   const [shifts, setShifts] = useState<Shift[]>([])
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL / 1000)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    const [sessionRes, busRes, routeRes, shiftRes] = await Promise.all([
-      window.api.session.getOrCreateToday(),
-      window.api.bus.getAll(),
-      window.api.route.getAll(),
-      window.api.shift.getAll()
-    ])
-
-    if (busRes.success) setBuses(busRes.data)
-    if (routeRes.success) setRoutes(routeRes.data)
-    if (shiftRes.success) setShifts(shiftRes.data)
-
-    if (sessionRes.success) {
-      const runsRes = await window.api.planner.getRuns(sessionRes.data.id)
-      if (runsRes.success) {
-        setRuns(runsRes.data.filter((r) => r.status !== 'CANCELLED'))
+    setLoading(true)
+    setError(null)
+    try {
+      const [sessionRes, shiftRes] = await Promise.all([
+        window.api.session.getOrCreateToday(),
+        window.api.shift.getAll()
+      ])
+      if (!sessionRes.success) {
+        setError(`Session error: ${sessionRes.error}`)
+        setLoading(false)
+        return
       }
-    }
+      if (shiftRes.success) setShifts(shiftRes.data)
 
-    setLastRefresh(new Date())
+      const runsRes = await window.api.planner.getAllRunsWithDetails(sessionRes.data.id)
+      if (runsRes.success) setDetails(runsRes.data)
+      else setError(`Runs error: ${runsRes.error}`)
+    } catch (e) {
+      setError(String(e))
+    }
+    setLoading(false)
     setCountdown(REFRESH_INTERVAL / 1000)
   }, [])
 
@@ -123,72 +106,96 @@ export default function DisplayBoard() {
     return () => clearInterval(interval)
   }, [load])
 
-  // Countdown ticker
   useEffect(() => {
-    const tick = setInterval(() => {
-      setCountdown((c) => Math.max(0, c - 1))
-    }, 1000)
+    const tick = setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000)
     return () => clearInterval(tick)
   }, [])
 
   const now = new Date()
   const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+
+  const rows = buildRows(details)
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+    <div className="bg-gray-900 text-white flex flex-col" style={{ height: '100vh' }}>
+
       {/* Header */}
-      <div className="px-8 py-4 border-b border-gray-800 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center">
-            <BusIcon className="w-5 h-5 text-white" />
+      <div className="px-6 py-3 border-b border-gray-800 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-brand-600 rounded-lg flex items-center justify-center">
+            <BusIcon className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="font-bold text-lg leading-none text-white">School Bus — Display Board</p>
+            <p className="font-bold text-sm leading-none">Display Board</p>
             <p className="text-xs text-gray-500 mt-0.5">{dateStr}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-sm text-gray-400">
+        <div className="flex items-center gap-3">
           <button
             onClick={load}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-xs text-gray-400"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Refresh ({countdown}s)
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            {countdown}s
           </button>
-          <span className="text-2xl font-mono font-bold text-white">{timeStr}</span>
+          <span className="text-xl font-mono font-bold tabular-nums">{timeStr}</span>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 p-6">
-        {runs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-600">
-            <BusIcon className="w-16 h-16 mb-4" />
-            <p className="text-xl font-semibold">No runs scheduled today</p>
-            <p className="text-sm mt-1">Refreshing every 30 seconds</p>
+      {/* Body */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {error ? (
+          <div className="flex flex-col items-center justify-center h-full text-red-400 gap-2">
+            <AlertCircle className="w-10 h-10" />
+            <p className="text-sm font-medium">Failed to load</p>
+            <p className="text-xs text-red-500 max-w-sm text-center">{error}</p>
+            <button onClick={load} className="mt-2 px-4 py-2 bg-gray-800 rounded-lg text-xs text-gray-300 hover:bg-gray-700">
+              Retry
+            </button>
+          </div>
+        ) : loading && details.length === 0 ? (
+          <div className="flex items-center justify-center h-full gap-3 text-gray-500">
+            <RefreshCw className="w-6 h-6 animate-spin" />
+            <span className="text-sm">Loading...</span>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-3">
+            <BusIcon className="w-12 h-12" />
+            <p className="text-base font-medium">No runs scheduled today</p>
+            <p className="text-xs text-gray-700">Refreshes every 30 seconds</p>
           </div>
         ) : (
-          <>
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-gray-500 text-sm">
-                {runs.length} run{runs.length !== 1 ? 's' : ''} scheduled
-                {' · '}
-                <span className="text-gray-600 text-xs">Last updated {lastRefresh.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {runs.map((run) => (
-                <DisplayRunCard
-                  key={run.id}
-                  run={run}
-                  bus={buses.find((b) => b.id === run.bus_id)}
-                  route={routes.find((r) => r.id === run.route_id)}
-                  shift={shifts.find((s) => s.id === run.shift_id)}
-                />
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#111827', position: 'sticky', top: 0, zIndex: 1 }}>
+                <th style={{ padding: '8px 20px', textAlign: 'left', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Stands
+                </th>
+                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#93c5fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 120 }}>
+                  Boys Bus
+                </th>
+                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#f9a8d4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 120 }}>
+                  Girls Bus
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={row.key} style={{ background: i % 2 === 0 ? '#111827' : '#0f172a', borderTop: '1px solid #1f2937' }}>
+                  <td style={{ padding: '11px 20px', fontSize: 14, color: '#d1d5db', lineHeight: 1.5 }}>
+                    {row.stops.join(', ')}
+                  </td>
+                  <td style={{ padding: '11px 20px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: row.boysBus ? '#93c5fd' : '#374151', whiteSpace: 'nowrap' }}>
+                    {row.boysBus || '—'}
+                  </td>
+                  <td style={{ padding: '11px 20px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: row.girlsBus ? '#f9a8d4' : '#374151', whiteSpace: 'nowrap' }}>
+                    {row.girlsBus || '—'}
+                  </td>
+                </tr>
               ))}
-            </div>
-          </>
+            </tbody>
+          </table>
         )}
       </div>
     </div>

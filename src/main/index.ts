@@ -60,6 +60,7 @@ app.whenReady().then(() => {
       title: 'School Bus — Display Board',
       webPreferences: {
         preload: join(__dirname, '../preload/index.mjs'),
+        sandbox: false,
         contextIsolation: true,
         nodeIntegration: false
       }

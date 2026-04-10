@@ -6,11 +6,12 @@ import { useSessionStore } from '../store/sessionStore'
 export default function Dashboard() {
   const { stats, loadStats } = useSessionStore()
   const navigate = useNavigate()
+  const user = "Raiyan"
 
   useEffect(() => { loadStats() }, [loadStats])
 
   const today = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    weekday: 'long', year: 'numeric', month: 'long', day: `numeric`
   })
 
   return (
@@ -37,25 +38,17 @@ export default function Dashboard() {
       <div className="px-8 pt-10 pb-6">
         <p className="text-sm text-gray-400 mb-1">{today}</p>
         <h1 className="text-3xl font-bold text-gray-900 leading-tight">
-          Good {getGreeting()},<br />
-          <span className="text-brand-600">ready to plan?</span>
+          Good {getGreeting()}, {user}!<br />
         </h1>
-
-        {stats?.session && (
-          <div className="flex items-center gap-2 mt-3">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-sm text-gray-500">Session open — {stats.session.date}</span>
-          </div>
-        )}
       </div>
 
       {/* Stat cards */}
       <div className="px-8 grid grid-cols-2 gap-3 mb-6">
         {[
-          { icon: Bus,     label: 'Buses',    value: stats?.totalBuses ?? '—',    sub: `${stats?.activeBuses ?? 0} active` },
-          { icon: MapPin,  label: 'Routes',   value: stats?.totalRoutes ?? '—',   sub: 'active routes' },
-          { icon: Users,   label: 'Students', value: stats?.totalStudents ?? '—', sub: 'planned today' },
-          { icon: Activity,label: 'Runs',     value: stats?.runsToday ?? '—',     sub: "today's runs" },
+          { icon: Bus,      label: 'Buses',    value: stats?.totalBuses ?? '—',    sub: `${stats?.activeBuses ?? 0} active` },
+          { icon: MapPin,   label: 'Routes',   value: stats?.totalRoutes ?? '—',   sub: 'active routes' },
+          { icon: Users,    label: 'Students', value: stats?.totalStudents ?? '—', sub: 'planned today' },
+          { icon: Activity, label: 'Runs',     value: stats?.runsToday ?? '—',     sub: "today's runs" },
         ].map(({ icon: Icon, label, value, sub }) => (
           <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             <Icon className="w-5 h-5 text-brand-500 mb-3" />

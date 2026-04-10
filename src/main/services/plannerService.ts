@@ -27,6 +27,15 @@ export const plannerService = {
     }
   },
 
+  getAllRunsWithDetails(session_id: unknown): IpcResult<RunWithDetails[]> {
+    try {
+      const id = z.string().uuid().parse(session_id)
+      return { success: true, data: runRepo.getAllRunsWithDetails(id) }
+    } catch (e) {
+      return { success: false, error: String(e) }
+    }
+  },
+
   getRunWithDetails(run_id: unknown): IpcResult<RunWithDetails> {
     try {
       const id = z.string().uuid().parse(run_id)

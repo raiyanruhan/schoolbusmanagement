@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type {
-  Bus, Route, Shift, RouteWithStops, Run,
+  Bus, Route, Shift, RouteWithStops, Run, StopConfig,
   EngineOutput, ProposedRun, AssignmentStrategy, RunDirection
 } from '../../shared/types'
 import { useSessionStore } from '../store/sessionStore'
@@ -72,8 +72,8 @@ function RunCard({ run, buses, routes, shifts, onDelete }: {
 
 function CapacityBar({ used, capacity, overload }: { used: number; capacity: number; overload: number }) {
   const max = capacity + overload
-  const pct = Math.min((used / max) * 100, 100)
-  const overPct = capacity > 0 ? Math.min((capacity / max) * 100, 100) : 100
+  const pct = Math.min((used / Math.max(max, 1)) * 100, 100)
+  const overPct = capacity > 0 ? Math.min((capacity / Math.max(max, 1)) * 100, 100) : 100
   const isOver = used > capacity
   const isWay = used > max
 
@@ -81,7 +81,7 @@ function CapacityBar({ used, capacity, overload }: { used: number; capacity: num
     <div>
       <div className="flex items-center justify-between text-xs mb-1">
         <span className={isOver ? 'text-orange-600 font-medium' : 'text-gray-600'}>
-          {used} / {capacity} seats {isOver && `(+${used - capacity} overload)`}
+          {used} / {capacity} students {isOver && `(+${used - capacity} overload)`}
         </span>
         {isWay && <span className="text-red-600 font-medium flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Exceeds limit</span>}
       </div>
@@ -551,14 +551,18 @@ export default function Planner() {
   } = usePlannerStore()
 
   const [routeDetails, setRouteDetails] = useState<RouteWithStops | null>(null)
+  const [stopConfigs, setStopConfigs] = useState<StopConfig[]>([])
   const [deleteRunId, setDeleteRunId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [clearConfirm, setClearConfirm] = useState(false)
   const [activeTab, setActiveTab] = useState<'manual' | 'auto'>('manual')
 
   useEffect(() => {
     if (session) loadData(session.id)
   }, [session, loadData])
 
+  // Load stops for selected route
   useEffect(() => {
     if (selectedRoute) {
       window.api.route.getWithStops(selectedRoute.id).then((r) => {
@@ -571,6 +575,14 @@ export default function Planner() {
       setRouteDetails(null)
     }
   }, [selectedRoute?.id])
+
+  // Load stop configs when shift changes
+  useEffect(() => {
+    if (!selectedShift) { setStopConfigs([]); return }
+    window.api.shift.getStopConfigs(selectedShift.id).then((r) => {
+      if (r.success) setStopConfigs(r.data)
+    })
+  }, [selectedShift?.id])
 
   const handleConfirmRun = async () => {
     if (!session) return
@@ -595,13 +607,28 @@ export default function Planner() {
     }
   }
 
-  const selectedStopCount = routeDetails?.stops
+  const handleClearShiftPlan = async () => {
+    if (!selectedShift) return
+    setClearing(true)
+    const shiftRuns = runs.filter((r) => r.shift_id === selectedShift.id)
+    for (const run of shiftRuns) await deleteRun(run.id)
+    setClearing(false)
+    setClearConfirm(false)
+    showToast('Shift plan cleared', 'info')
+  }
+
+  // Student count for selected stops from StopConfig
+  const selectedStudentCount = routeDetails?.stops
     .filter((s) => selectedStopIds.includes(s.id))
-    .length ?? 0
+    .reduce((sum, stop) => {
+      const cfg = stopConfigs.find((c) => c.stop_id === stop.id)
+      return sum + (cfg ? cfg.planned_boys + cfg.planned_girls : 0)
+    }, 0) ?? 0
 
   const activeBuses = buses.filter((b) => b.status === 'ACTIVE')
   const activeRoutes = routes.filter((r) => r.is_active)
   const activeShifts = shifts.filter((s) => s.is_active)
+  const shiftRuns = selectedShift ? runs.filter((r) => r.shift_id === selectedShift.id) : []
 
   if (!session) {
     return (
@@ -619,7 +646,20 @@ export default function Planner() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden">
-      <TopBar showBack backTo="/" backLabel="Home" title={`Planner — ${session.date}`} />
+      <TopBar
+        showBack backTo="/" backLabel="Home"
+        title={`Planner — ${session.date}`}
+        right={
+          activeTab === 'manual' && shiftRuns.length > 0 ? (
+            <button
+              onClick={() => setClearConfirm(true)}
+              className="btn-ghost btn-sm text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear Shift Plan
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* Tab bar */}
       <div className="bg-white border-b border-gray-200 px-6 flex items-center gap-1 shrink-0">
@@ -645,7 +685,7 @@ export default function Planner() {
       {/* Tab content */}
       {activeTab === 'manual' ? (
         <div className="flex flex-1 overflow-hidden border-t border-gray-100">
-          {/* ── LEFT PANEL: Buses + Route selection ─────────────────────── */}
+          {/* ── LEFT PANEL: Config ───────────────────────────────────────── */}
           <div className="w-80 border-r border-gray-200 bg-white flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-100">
               <h2 className="section-title">Manual Planner</h2>
@@ -711,7 +751,7 @@ export default function Planner() {
                             <p className="text-xs text-gray-400">{bus.capacity} seats</p>
                           </div>
                           {isSelected && <CheckCircle2 className="w-5 h-5 text-brand-600 shrink-0" />}
-                          {isUsed && <span className="text-xs text-orange-500">In use</span>}
+                          {isUsed && !isSelected && <span className="text-xs text-orange-500">In use</span>}
                         </div>
                       </button>
                     )
@@ -742,7 +782,7 @@ export default function Planner() {
           </div>
 
           {/* ── CENTER PANEL: Stop selection ──────────────────────────── */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-gray-800">
@@ -751,6 +791,7 @@ export default function Planner() {
                 {selectedStopIds.length > 0 && (
                   <p className="text-xs text-gray-500 mt-0.5">
                     {selectedStopIds.length} stop{selectedStopIds.length !== 1 ? 's' : ''} selected
+                    {selectedStudentCount > 0 && ` · ${selectedStudentCount} students`}
                   </p>
                 )}
               </div>
@@ -770,10 +811,10 @@ export default function Planner() {
             </div>
 
             {/* Capacity preview */}
-            {selectedBus && (
+            {selectedBus && selectedRoute && (
               <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
                 <CapacityBar
-                  used={selectedStopCount}
+                  used={selectedStudentCount}
                   capacity={selectedBus.capacity}
                   overload={selectedShift?.default_overload ?? 0}
                 />
@@ -791,6 +832,11 @@ export default function Planner() {
                 <div className="space-y-2">
                   {routeDetails.stops.filter((s) => s.is_active).map((stop, i) => {
                     const isSelected = selectedStopIds.includes(stop.id)
+                    const cfg = stopConfigs.find((c) => c.stop_id === stop.id)
+                    const boys = cfg?.planned_boys ?? 0
+                    const girls = cfg?.planned_girls ?? 0
+                    const total = boys + girls
+
                     return (
                       <button
                         key={stop.id}
@@ -809,6 +855,20 @@ export default function Planner() {
                             <p className="text-sm font-medium text-gray-800">{stop.name}</p>
                             {stop.name_bn && <p className="text-xs text-gray-400">{stop.name_bn}</p>}
                           </div>
+                          {/* B/G counts from StopConfig */}
+                          {stopConfigs.length > 0 && (
+                            <div className="flex items-center gap-2 text-xs shrink-0">
+                              {boys > 0 && (
+                                <span className="text-blue-600 font-medium">B:{boys}</span>
+                              )}
+                              {girls > 0 && (
+                                <span className="text-pink-600 font-medium">G:{girls}</span>
+                              )}
+                              {total === 0 && cfg && (
+                                <span className="text-gray-300">0</span>
+                              )}
+                            </div>
+                          )}
                           {isSelected && <CheckCircle2 className="w-5 h-5 text-brand-500 shrink-0" />}
                         </div>
                       </button>
@@ -825,7 +885,7 @@ export default function Planner() {
           </div>
 
           {/* ── RIGHT PANEL: Today's runs ────────────────────────────── */}
-          <div className="w-80 border-l border-gray-200 bg-gray-50 flex flex-col overflow-hidden">
+          <div className="w-72 xl:w-80 border-l border-gray-200 bg-gray-50 flex flex-col overflow-hidden shrink-0">
             <div className="p-4 border-b border-gray-100 bg-white">
               <h3 className="font-semibold text-gray-800">Today's Runs</h3>
               <p className="text-xs text-gray-400 mt-0.5">{runs.length} run{runs.length !== 1 ? 's' : ''} planned</p>
@@ -865,7 +925,7 @@ export default function Planner() {
         />
       )}
 
-      {/* Delete confirm */}
+      {/* Delete run confirm */}
       <ConfirmDialog
         open={!!deleteRunId}
         onClose={() => setDeleteRunId(null)}
@@ -873,6 +933,17 @@ export default function Planner() {
         title="Delete Run"
         message="Are you sure you want to delete this run? This cannot be undone."
         confirmLabel="Delete"
+        danger
+      />
+
+      {/* Clear shift plan confirm */}
+      <ConfirmDialog
+        open={clearConfirm}
+        onClose={() => setClearConfirm(false)}
+        onConfirm={handleClearShiftPlan}
+        title="Clear Shift Plan"
+        message={`Remove all ${shiftRuns.length} run${shiftRuns.length !== 1 ? 's' : ''} for ${selectedShift?.name ?? 'this shift'}? This cannot be undone.`}
+        confirmLabel={clearing ? 'Clearing...' : 'Clear All'}
         danger
       />
     </div>

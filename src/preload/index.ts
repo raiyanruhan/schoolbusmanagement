@@ -37,7 +37,9 @@ const api = {
     update: (input: UpdateRouteInput): Promise<IpcResult<Route>> =>
       ipcRenderer.invoke('route:update', input),
     delete: (id: string): Promise<IpcResult<void>> =>
-      ipcRenderer.invoke('route:delete', id)
+      ipcRenderer.invoke('route:delete', id),
+    deleteAll: (): Promise<IpcResult<void>> =>
+      ipcRenderer.invoke('route:deleteAll')
   },
 
   stop: {
@@ -59,6 +61,8 @@ const api = {
       ipcRenderer.invoke('shift:create', input),
     update: (input: UpdateShiftInput): Promise<IpcResult<Shift>> =>
       ipcRenderer.invoke('shift:update', input),
+    delete: (id: string): Promise<IpcResult<void>> =>
+      ipcRenderer.invoke('shift:delete', id),
     getStopConfigs: (shift_id: string): Promise<IpcResult<StopConfig[]>> =>
       ipcRenderer.invoke('shift:getStopConfigs', shift_id),
     upsertStopConfig: (input: UpsertStopConfigInput): Promise<IpcResult<StopConfig>> =>
@@ -77,6 +81,8 @@ const api = {
   planner: {
     getRuns: (session_id: string): Promise<IpcResult<Run[]>> =>
       ipcRenderer.invoke('planner:getRuns', session_id),
+    getAllRunsWithDetails: (session_id: string): Promise<IpcResult<RunWithDetails[]>> =>
+      ipcRenderer.invoke('planner:getAllRunsWithDetails', session_id),
     getRunDetail: (run_id: string): Promise<IpcResult<RunWithDetails>> =>
       ipcRenderer.invoke('planner:getRunDetail', run_id),
     createRun: (input: CreateRunInput): Promise<IpcResult<Run>> =>
@@ -106,6 +112,24 @@ const api = {
   window: {
     openDisplay: (): Promise<void> =>
       ipcRenderer.invoke('window:openDisplay')
+  },
+
+  // ── Excel import ───────────────────────────────────────────────────────
+  excel: {
+    importRoutes: (buffer: ArrayBuffer): Promise<IpcResult<{
+      routesCreated: number
+      routesExisting: number
+      stopsCreated: number
+      stopsSkipped: number
+    }>> =>
+      ipcRenderer.invoke('excel:importRoutes', buffer),
+    importShiftConfigs: (input: {
+      shift_id: string
+      buffer: ArrayBuffer
+    }): Promise<IpcResult<{ updated: number; notFound: string[] }>> =>
+      ipcRenderer.invoke('excel:importShiftConfigs', input),
+    importBuses: (buffer: ArrayBuffer): Promise<IpcResult<{ created: number; skipped: number }>> =>
+      ipcRenderer.invoke('excel:importBuses', buffer)
   }
 }
 
