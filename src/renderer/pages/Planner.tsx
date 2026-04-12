@@ -113,15 +113,9 @@ function ProposedRunCard({ pr, buses }: { pr: ProposedRun; buses: Bus[] }) {
 
   return (
     <div className={`border-2 rounded-xl overflow-hidden transition-all ${pr.isOverloaded ? 'border-orange-300' : 'border-gray-200'}`}>
-      {/* Color bar */}
-      <div className="h-1 w-full" style={{ backgroundColor: pr.route_color }} />
-
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center shrink-0">
-              <BusIcon className="w-5 h-5 text-brand-700" />
-            </div>
             <div>
               <p className="font-bold text-gray-900">{bus?.number ?? pr.bus_number}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
@@ -511,8 +505,7 @@ function AutoPlanTab({
 
               {plan.warnings.length === 0 && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-xs text-green-700 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                  No warnings — plan looks good!
+                  Plan looks good!
                 </div>
               )}
             </>
@@ -746,9 +739,8 @@ export default function Planner() {
                           ${isUsed ? 'opacity-60' : ''}`}
                       >
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">{bus.number}</p>
-                            <p className="text-xs text-gray-400">{bus.capacity} seats</p>
+                          <div className='items-center allign-middle center'>
+                            <p className="text-sm font-semibold">{bus.number} <span className='text-gray-400'>({bus.capacity} seats)</span></p>
                           </div>
                           {isSelected && <CheckCircle2 className="w-5 h-5 text-brand-600 shrink-0" />}
                           {isUsed && !isSelected && <span className="text-xs text-orange-500">In use</span>}

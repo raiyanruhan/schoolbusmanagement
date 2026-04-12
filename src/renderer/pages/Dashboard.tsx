@@ -20,14 +20,11 @@ export default function Dashboard() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-8 pt-6 pb-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
-            <Bus className="w-4.5 h-4.5 text-white" />
-          </div>
           <span className="font-semibold text-gray-800 text-sm tracking-tight">School Bus Manager</span>
         </div>
         <button
           onClick={() => navigate('/settings')}
-          className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-white hover:shadow-sm transition-all"
+          className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 transition-all"
           title="Settings"
         >
           <Settings className="w-5 h-5" />

@@ -121,7 +121,7 @@ export default function DisplayBoard() {
     <div className="bg-gray-900 text-white flex flex-col" style={{ height: '100vh' }}>
 
       {/* Header */}
-      <div className="px-6 py-3 border-b border-gray-800 flex items-center justify-between shrink-0">
+      {/* <div className="px-6 py-3 border-b border-gray-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-brand-600 rounded-lg flex items-center justify-center">
             <BusIcon className="w-4 h-4 text-white" />
@@ -141,7 +141,7 @@ export default function DisplayBoard() {
           </button>
           <span className="text-xl font-mono font-bold tabular-nums">{timeStr}</span>
         </div>
-      </div>
+      </div> */}
 
       {/* Body */}
       <div style={{ flex: 1, overflow: 'auto' }}>
@@ -162,8 +162,8 @@ export default function DisplayBoard() {
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-600 gap-3">
             <BusIcon className="w-12 h-12" />
-            <p className="text-base font-medium">No runs scheduled today</p>
-            <p className="text-xs text-gray-700">Refreshes every 30 seconds</p>
+            <p className="text-base font-medium serif-font">The ones that love us, never really leave us.</p>
+            <p className="text-xs text-gray-700">— Serius Black</p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -173,16 +173,16 @@ export default function DisplayBoard() {
                   Stands
                 </th>
                 <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#93c5fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 120 }}>
-                  Boys Bus
+                  Boys
                 </th>
                 <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#f9a8d4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 120 }}>
-                  Girls Bus
+                  Girls
                 </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row, i) => (
-                <tr key={row.key} style={{ background: i % 2 === 0 ? '#111827' : '#0f172a', borderTop: '1px solid #1f2937' }}>
+                <tr key={row.key} style={{ background: i % 2 === 0 ? '#191f2c' : '#141b2c', borderTop: '1px solid #1f2937' }}>
                   <td style={{ padding: '11px 20px', fontSize: 14, color: '#d1d5db', lineHeight: 1.5 }}>
                     {row.stops.join(', ')}
                   </td>

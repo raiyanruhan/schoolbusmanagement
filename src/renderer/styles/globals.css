@@ -17,6 +17,9 @@
     font-family: 'Inter', system-ui, sans-serif;
     @apply bg-gray-50 text-gray-900 antialiased;
   }
+  serif-font{
+    font-family: "Century";
+  }
 
   /* Scrollbar styling */
   ::-webkit-scrollbar {
