@@ -1,7 +1,25 @@
+/**
+ * Core assignment engine — PURE function, no DB access, no side effects.
+ *
+ * Pipeline:
+ *   1. Filter available buses (ACTIVE + not used in this shift/direction)
+ *   2. Sort routes by strategy
+ *   3. For each route:
+ *      a. Filter stops that have students
+ *      b. Resolve gender groups (COMBINED / SEPARATED / AUTO with fallback)
+ *      c. For each group → split into time+capacity-valid segments
+ *      d. Optimize segment boundaries (backtracking ±1)
+ *      e. Best-fit bus assignment per segment
+ *   4. Compile output with warnings and summary
+ */
+
 import { v4 as uuidv4 } from 'uuid'
 import { getAvailableBuses } from './availability'
 import { resolveGenderGroups } from './genderLogic'
-import { splitIntoContiguousGroups } from './capacityPlanner'
+import { splitIntoSegments, optimizeBoundaries } from './segmentSplitter'
+import type { SegmentConstraints } from './segmentSplitter'
+import { findBestFitBus, removeFromPool } from './busSelector'
+import { segmentTravelTimeMin, computeArrivalTime } from './timeCalculator'
 import type {
   EngineInput,
   EngineOutput,
@@ -12,15 +30,6 @@ import type {
   Bus
 } from './types'
 
-/**
- * Main engine orchestrator — pure function, no DB access.
- *
- * Algorithm:
- * 1. Get available buses (active + not used in this shift+direction)
- * 2. Sort routes by strategy
- * 3. For each route → resolve gender groups → split into capacity groups → assign a bus
- * 4. Compile output
- */
 export function runAssignmentEngine(input: EngineInput): EngineOutput {
   const { buses, routes, existingRuns, config } = input
 
@@ -28,75 +37,100 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
   const unassignedStops: UnassignedStopInfo[] = []
   const globalWarnings: EngineWarning[] = []
 
-  // 1. Available buses
-  const availableBuses = getAvailableBuses(buses, existingRuns, config.shift_id, config.direction)
-  const busPool: Bus[] = [...availableBuses]
+  // 1. Available bus pool — sorted descending by capacity (for best-fit reference)
+  let busPool: Bus[] = getAvailableBuses(buses, existingRuns, config.shift_id, config.direction)
+    .sort((a, b) => b.capacity - a.capacity)
+
+  // Reference capacity = largest available bus (most optimistic split for fewest segments)
+  const refCapacity = busPool[0]?.capacity ?? 40
+
+  const baseSec = config.time_config?.base_stop_time_sec ?? 20
+  const perStudentSec = config.time_config?.per_student_time_sec ?? 2
 
   // 2. Sort routes by strategy
   const sortedRoutes = sortRoutes(routes, config.strategy)
 
-  // Track which routes need more than one bus (split routes)
   const splitRouteIds = new Set<string>()
 
   // 3. Process each route
   for (const route of sortedRoutes) {
-    const activeStops = route.stops.filter((s) => s.total > 0 || (s.planned_boys + s.planned_girls) > 0)
+    // Only include stops that have students in this shift
+    const activeStops = route.stops
+      .filter((s) => (s.planned_boys + s.planned_girls) > 0)
+      .sort((a, b) => a.sequence_order - b.sequence_order)
 
     if (activeStops.length === 0) continue
 
-    // Resolve gender groups
-    const { groups, warnings: genderWarnings } = resolveGenderGroups(
-      activeStops,
-      config.gender_mode,
-      config.underfill_threshold
-    )
+    const routeTotalStops = activeStops.length
+    const routeTravelMin = route.travel_time_minutes ?? 0
 
-    // Attach route context to gender warnings
-    genderWarnings.forEach((w) => {
-      globalWarnings.push({ ...w, context: route.name })
-    })
+    const baseConstraints: SegmentConstraints = {
+      refCapacity,
+      overload_limit: config.overload_limit,
+      totalRouteStops: routeTotalStops,
+      travel_time_minutes: routeTravelMin,
+      timeConfig: config.time_config,
+      baseSec,
+      perStudentSec
+    }
+
+    // a. Resolve gender groups — with AUTO fallback
+    let genderResult = resolveGenderGroups(activeStops, config.gender_mode, config.underfill_threshold)
+
+    if (config.gender_mode === 'AUTO') {
+      // Simulate SEPARATED to check bus availability
+      const separatedResult = resolveGenderGroups(activeStops, 'SEPARATED', config.underfill_threshold)
+      const busesNeeded = estimateBusesNeeded(activeStops, separatedResult.groups, baseConstraints)
+      if (busesNeeded > busPool.length) {
+        // Not enough buses for gender separation — fall back to COMBINED
+        genderResult = resolveGenderGroups(activeStops, 'COMBINED', config.underfill_threshold)
+        globalWarnings.push({
+          type: 'GENDER_MISMATCH',
+          severity: 'WARNING',
+          message: `Route "${route.name}": insufficient buses for gender separation (need ${busesNeeded}, have ${busPool.length}). Falling back to COMBINED.`,
+          context: route.name
+        })
+      }
+    }
+
+    // Propagate gender warnings with route context
+    genderResult.warnings.forEach((w) => globalWarnings.push({ ...w, context: route.name }))
 
     let routeBusCount = 0
 
-    // For each gender group
-    for (const group of groups) {
-      // Split stops into capacity-fitting contiguous groups
-      const capacityGroups = splitIntoContiguousGroups(
-        activeStops,
-        group.getCount,
-        config.overload_limit > 0 ? buses[0]?.capacity ?? 40 : 40, // use first bus capacity as reference, will be per-bus below
-        config.overload_limit
-      )
+    // b. Process each gender group
+    for (const group of genderResult.groups) {
+      // Only stops where this group has students
+      const groupStops = activeStops.filter((s) => group.getCount(s) > 0)
+      if (groupStops.length === 0) continue
 
-      // Actually: we need to re-split per the actual bus capacity when we pick the bus.
-      // Since we don't know which bus yet, use a simplified approach:
-      // Greedily assign capacity groups to buses as we go.
-      // We'll pack stops against the actual bus once we pick it.
+      // c. Split into constraint-valid segments
+      const groupConstraints: SegmentConstraints = {
+        ...baseConstraints,
+        totalRouteStops: groupStops.length
+      }
 
-      // Collect all stops for this gender group to re-split with actual bus capacity
-      const stopsForGroup = activeStops
-      const stopsWithCounts = stopsForGroup.map((s) => ({
-        ...s,
-        _count: group.getCount(s)
-      }))
+      let segments = splitIntoSegments(groupStops, group.getCount, groupConstraints)
 
-      // Get contiguous stop segments split by available bus capacity
-      // We'll do a second pass: pick a bus, then split
-      const remainingStops = [...stopsForGroup]
+      // d. Boundary optimization (balance load between adjacent segments)
+      if (segments.length > 1) {
+        segments = optimizeBoundaries(segments, group.getCount, groupConstraints)
+      }
 
-      while (remainingStops.length > 0) {
-        // Pick the next available bus
-        const bus = busPool.shift()
+      // e. Assign best-fit bus to each segment
+      for (const segment of segments) {
+        const studentCount = segment.reduce((sum, s) => sum + group.getCount(s), 0)
 
-        if (!bus) {
-          // No bus available — mark all remaining stops as unassigned
-          remainingStops.forEach((stop) => {
+        const found = findBestFitBus(busPool, studentCount, config.overload_limit)
+
+        if (!found) {
+          segment.forEach((stop) => {
             unassignedStops.push({
               stop_id: stop.stop_id,
               stop_name: stop.stop_name,
               route_id: route.id,
               route_name: route.name,
-              reason: 'NO_AVAILABLE_BUS',
+              reason: 'No available bus',
               planned_boys: stop.planned_boys,
               planned_girls: stop.planned_girls
             })
@@ -104,44 +138,50 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
           globalWarnings.push({
             type: 'NO_AVAILABLE_BUS',
             severity: 'CRITICAL',
-            message: `No available bus for route "${route.name}" (${group.gender})`,
+            message: `No available bus for ${group.gender} group on route "${route.name}"`,
             context: route.name
           })
-          break
+          continue
         }
 
-        // Split remaining stops to fit within this bus capacity
-        const busCapacity = bus.capacity
-        const busMax = busCapacity + config.overload_limit
+        const { bus, index } = found
+        busPool = removeFromPool(busPool, index)
 
-        // Greedily pack stops for this bus
-        const busStops: StopWithCount[] = []
-        let busTotal = 0
-
-        while (remainingStops.length > 0) {
-          const next = remainingStops[0]
-          const count = group.getCount(next)
-
-          if (busStops.length > 0 && busTotal + count > busMax) {
-            // This stop won't fit — stop packing for this bus
-            break
-          }
-
-          busStops.push(next)
-          busTotal += count
-          remainingStops.shift()
-        }
-
-        const isOverloaded = busTotal > busCapacity
+        const isOverloaded = studentCount > bus.capacity
         const runWarnings: EngineWarning[] = []
 
         if (isOverloaded) {
           runWarnings.push({
             type: 'OVERLOADED',
             severity: 'WARNING',
-            message: `Bus ${bus.number} is overloaded by ${busTotal - busCapacity} on route "${route.name}"`,
+            message: `Bus ${bus.number} overloaded by ${studentCount - bus.capacity} student${studentCount - bus.capacity !== 1 ? 's' : ''} on route "${route.name}"`,
             context: route.name
           })
+        }
+
+        // Compute arrival time (if time config is present)
+        let arrival_time: string | undefined
+        if (config.time_config) {
+          const segStopTimeSec = segment.reduce(
+            (sum, s) => sum + baseSec + group.getCount(s) * perStudentSec,
+            0
+          )
+          const travelMin = segmentTravelTimeMin(
+            segment.length,
+            groupConstraints.totalRouteStops,
+            routeTravelMin
+          )
+          const arrival = computeArrivalTime(config.time_config.departure_time, travelMin, segStopTimeSec)
+          arrival_time = arrival.toISOString()
+
+          if (arrival > config.time_config.arrival_deadline) {
+            runWarnings.push({
+              type: 'TIME_EXCEEDED',
+              severity: 'WARNING',
+              message: `Bus ${bus.number} may arrive after deadline on route "${route.name}" (est. ${arrival.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })})`,
+              context: route.name
+            })
+          }
         }
 
         const proposed: ProposedRun = {
@@ -153,16 +193,17 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
           route_color: route.color,
           direction: config.direction,
           gender: group.gender,
-          stops: busStops.map((s) => ({
+          stops: segment.map((s) => ({
             stop_id: s.stop_id,
             stop_name: s.stop_name,
             student_count: group.getCount(s)
           })),
-          totalStudents: busTotal,
-          capacity: busCapacity,
+          totalStudents: studentCount,
+          capacity: bus.capacity,
           overload_limit: config.overload_limit,
           isOverloaded,
-          warnings: runWarnings
+          warnings: runWarnings,
+          ...(arrival_time !== undefined && { arrival_time })
         }
 
         proposedRuns.push(proposed)
@@ -170,9 +211,7 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
       }
     }
 
-    if (routeBusCount > 1) {
-      splitRouteIds.add(route.id)
-    }
+    if (routeBusCount > 1) splitRouteIds.add(route.id)
   }
 
   // Compile summary
@@ -182,26 +221,50 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
     0
   )
 
-  const summary = {
-    totalBusesUsed: proposedRuns.length,
-    totalStudentsAssigned,
-    totalStudentsUnassigned,
-    overloadedRuns: proposedRuns.filter((r) => r.isOverloaded).length,
-    splitRoutes: splitRouteIds.size
-  }
-
   return {
     proposedRuns,
     unassignedStops,
     warnings: globalWarnings,
-    summary
+    summary: {
+      totalBusesUsed: proposedRuns.length,
+      totalStudentsAssigned,
+      totalStudentsUnassigned,
+      overloadedRuns: proposedRuns.filter((r) => r.isOverloaded).length,
+      splitRoutes: splitRouteIds.size
+    }
   }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getTotalStudents(stops: StopWithCount[]): number {
-  return stops.reduce((sum, s) => sum + s.planned_boys + s.planned_girls, 0)
+/**
+ * Estimate the number of buses required for a set of gender groups.
+ * Used to check feasibility of SEPARATED mode in AUTO logic.
+ */
+function estimateBusesNeeded(
+  stops: StopWithCount[],
+  groups: ReturnType<typeof resolveGenderGroups>['groups'],
+  constraints: SegmentConstraints
+): number {
+  let total = 0
+  const maxSeats = constraints.refCapacity + constraints.overload_limit
+
+  for (const group of groups) {
+    let current = 0
+    let buses = 0
+
+    for (const stop of stops) {
+      const count = group.getCount(stop)
+      if (count === 0) continue
+      if (buses === 0) { buses = 1 }
+      if (current + count > maxSeats) { buses++; current = count }
+      else { current += count }
+    }
+
+    total += buses
+  }
+
+  return total
 }
 
 function sortRoutes(
@@ -212,13 +275,12 @@ function sortRoutes(
 
   const withTotals = routes.map((r) => ({
     route: r,
-    total: getTotalStudents(r.stops)
+    total: r.stops.reduce((sum, s) => sum + s.planned_boys + s.planned_girls, 0)
   }))
 
   if (strategy === 'LARGEST_ROUTE_FIRST') {
     withTotals.sort((a, b) => b.total - a.total)
   } else {
-    // SMALLEST_ROUTE_FIRST
     withTotals.sort((a, b) => a.total - b.total)
   }
 

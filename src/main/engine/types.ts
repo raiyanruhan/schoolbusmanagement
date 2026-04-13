@@ -3,7 +3,7 @@ import type { Bus, Run, RunDirection, RunGender, GenderMode } from '../../shared
 // ─── Engine-specific enums ────────────────────────────────────────────────────
 
 export type AssignmentStrategy = 'LARGEST_ROUTE_FIRST' | 'SMALLEST_ROUTE_FIRST' | 'SEQUENCE_ORDER'
-export type WarningType = 'OVERLOADED' | 'UNDERFILLED' | 'NO_AVAILABLE_BUS' | 'GENDER_MISMATCH'
+export type WarningType = 'OVERLOADED' | 'UNDERFILLED' | 'NO_AVAILABLE_BUS' | 'GENDER_MISMATCH' | 'TIME_EXCEEDED'
 
 // ─── Warning ──────────────────────────────────────────────────────────────────
 
@@ -42,6 +42,8 @@ export interface ProposedRun {
   overload_limit: number
   isOverloaded: boolean
   warnings: EngineWarning[]
+  /** ISO string — only present when time_config was provided */
+  arrival_time?: string
 }
 
 // ─── A stop that could not be assigned ───────────────────────────────────────
@@ -75,6 +77,19 @@ export interface EngineOutput {
   summary: EngineSummary
 }
 
+// ─── Time configuration (optional — enables time-constraint enforcement) ──────
+
+export interface TimeConfig {
+  /** How long a bus stops at each stop baseline (seconds) */
+  base_stop_time_sec: number
+  /** Additional time per student boarding/alighting (seconds) */
+  per_student_time_sec: number
+  /** When the bus departs the origin (school or first stop) */
+  departure_time: Date
+  /** Latest allowed arrival at the destination */
+  arrival_deadline: Date
+}
+
 // ─── Engine configuration (caller-supplied parameters) ───────────────────────
 
 export interface EngineConfig {
@@ -85,6 +100,8 @@ export interface EngineConfig {
   strategy: AssignmentStrategy
   overload_limit: number
   underfill_threshold: number
+  /** Optional time constraint enforcement */
+  time_config?: TimeConfig
 }
 
 // ─── Full engine input ────────────────────────────────────────────────────────
@@ -96,6 +113,8 @@ export interface EngineInput {
     name: string
     name_bn: string | null
     color: string
+    /** Estimated full-route travel time in minutes (proportional per segment). Default 0. */
+    travel_time_minutes?: number
     stops: StopWithCount[]
   }>
   existingRuns: Run[]

@@ -5,65 +5,84 @@ import { Bus as BusIcon, RefreshCw, AlertCircle } from 'lucide-react'
 const REFRESH_INTERVAL = 30_000
 
 type DisplayRow = {
-  key: string
-  stops: string[]       // stop names in order
-  boysBus: string
-  girlsBus: string
+  key: string        // route_id
+  routeName: string
+  routeColor: string
+  stops: string[]    // all stop names for this route, sorted by sequence_order
+  boysBuses: string  // comma-separated bus numbers (may be multiple if route was split)
+  girlsBuses: string
 }
 
+/**
+ * Build one row per route, regardless of how many buses the engine assigned.
+ *
+ * Previous logic grouped by (boysBus, girlsBus) pair — this fragmented routes when
+ * the engine split them across 2+ buses (different boundaries for boys vs girls).
+ *
+ * New logic:
+ *   - Group runs by route_id
+ *   - Merge all stops from every run on that route
+ *   - Collect all boys bus numbers and all girls bus numbers
+ *   - Result: one row = one route, all stops, "23, 7" in boys column if 2 buses assigned
+ */
 function buildRows(details: RunWithDetails[]): DisplayRow[] {
-  // Map stopId → { stopName, boysBus, girlsBus, sequenceOrder }
-  const stopMap = new Map<string, {
-    name: string
-    seq: number
-    boysBus: string
-    girlsBus: string
+  const routeMap = new Map<string, {
+    routeName: string
+    routeColor: string
+    // stop_id → { name, seq } — deduplicates stops that appear in multiple runs
+    stops: Map<string, { name: string; seq: number }>
+    boysBuses: Set<string>
+    girlsBuses: Set<string>
   }>()
 
   for (const run of details) {
     const busNum = run.bus?.number ?? '—'
+    const routeId = run.route_id
+
+    if (!routeMap.has(routeId)) {
+      routeMap.set(routeId, {
+        routeName: run.route?.name ?? routeId,
+        routeColor: run.route?.color ?? '#6b7280',
+        stops: new Map(),
+        boysBuses: new Set(),
+        girlsBuses: new Set()
+      })
+    }
+
+    const entry = routeMap.get(routeId)!
+
+    if (run.gender === 'BOYS' || run.gender === 'MIXED') entry.boysBuses.add(busNum)
+    if (run.gender === 'GIRLS' || run.gender === 'MIXED') entry.girlsBuses.add(busNum)
+
     for (const rs of run.stops) {
-      if (!stopMap.has(rs.stop_id)) {
-        stopMap.set(rs.stop_id, {
+      if (!entry.stops.has(rs.stop_id)) {
+        entry.stops.set(rs.stop_id, {
           name: rs.stop?.name ?? rs.stop_id,
-          seq: rs.sequence_order,
-          boysBus: '',
-          girlsBus: ''
+          // Prefer the stop's own global sequence_order for correct ordering across merged runs
+          seq: rs.stop?.sequence_order ?? rs.sequence_order
         })
       }
-      const entry = stopMap.get(rs.stop_id)!
-      if (run.gender === 'BOYS') {
-        entry.boysBus = busNum
-      } else if (run.gender === 'GIRLS') {
-        entry.girlsBus = busNum
-      } else {
-        entry.boysBus = busNum
-        entry.girlsBus = busNum
-      }
     }
-  }
-
-  // Group stops by (boysBus, girlsBus) pair, preserving insertion/sequence order
-  const groupMap = new Map<string, { stops: Array<{ name: string; seq: number }>; boysBus: string; girlsBus: string }>()
-
-  for (const [, entry] of stopMap) {
-    const key = `${entry.boysBus}||${entry.girlsBus}`
-    if (!groupMap.has(key)) {
-      groupMap.set(key, { stops: [], boysBus: entry.boysBus, girlsBus: entry.girlsBus })
-    }
-    groupMap.get(key)!.stops.push({ name: entry.name, seq: entry.seq })
   }
 
   const rows: DisplayRow[] = []
-  for (const [key, group] of groupMap) {
-    group.stops.sort((a, b) => a.seq - b.seq)
+  for (const [routeId, entry] of routeMap) {
+    const sortedStops = [...entry.stops.values()]
+      .sort((a, b) => a.seq - b.seq)
+      .map((s) => s.name)
+
     rows.push({
-      key,
-      stops: group.stops.map((s) => s.name),
-      boysBus: group.boysBus,
-      girlsBus: group.girlsBus
+      key: routeId,
+      routeName: entry.routeName,
+      routeColor: entry.routeColor,
+      stops: sortedStops,
+      boysBuses: [...entry.boysBuses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join(', '),
+      girlsBuses: [...entry.girlsBuses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join(', ')
     })
   }
+
+  // Sort by route name for a stable, predictable order
+  rows.sort((a, b) => a.routeName.localeCompare(b.routeName))
 
   return rows
 }
@@ -111,39 +130,10 @@ export default function DisplayBoard() {
     return () => clearInterval(tick)
   }, [])
 
-  const now = new Date()
-  const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
-
   const rows = buildRows(details)
 
   return (
     <div className="bg-gray-900 text-white flex flex-col" style={{ height: '100vh' }}>
-
-      {/* Header */}
-      {/* <div className="px-6 py-3 border-b border-gray-800 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 bg-brand-600 rounded-lg flex items-center justify-center">
-            <BusIcon className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <p className="font-bold text-sm leading-none">Display Board</p>
-            <p className="text-xs text-gray-500 mt-0.5">{dateStr}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={load}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-xs text-gray-400"
-          >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-            {countdown}s
-          </button>
-          <span className="text-xl font-mono font-bold tabular-nums">{timeStr}</span>
-        </div>
-      </div> */}
-
-      {/* Body */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         {error ? (
           <div className="flex flex-col items-center justify-center h-full text-red-400 gap-2">
@@ -169,13 +159,16 @@ export default function DisplayBoard() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#111827', position: 'sticky', top: 0, zIndex: 1 }}>
+                <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: 40 }}>
+                  #
+                </th>
                 <th style={{ padding: '8px 20px', textAlign: 'left', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Stands
                 </th>
-                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#93c5fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 120 }}>
+                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#93c5fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 110 }}>
                   Boys
                 </th>
-                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#f9a8d4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 120 }}>
+                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#f9a8d4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 110 }}>
                   Girls
                 </th>
               </tr>
@@ -183,14 +176,35 @@ export default function DisplayBoard() {
             <tbody>
               {rows.map((row, i) => (
                 <tr key={row.key} style={{ background: i % 2 === 0 ? '#191f2c' : '#141b2c', borderTop: '1px solid #1f2937' }}>
-                  <td style={{ padding: '11px 20px', fontSize: 14, color: '#d1d5db', lineHeight: 1.5 }}>
-                    {row.stops.join(', ')}
+                  {/* Row number */}
+                  <td style={{ padding: '11px 12px', textAlign: 'center', fontSize: 12, color: '#4b5563', fontWeight: 700 }}>
+                    {String(i + 1).padStart(2, '0')}
                   </td>
-                  <td style={{ padding: '11px 20px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: row.boysBus ? '#93c5fd' : '#374151', whiteSpace: 'nowrap' }}>
-                    {row.boysBus || '—'}
+                  {/* Route name + stops */}
+                  <td style={{ padding: '11px 20px', lineHeight: 1.5 }}>
+                    <span style={{ fontSize: 14, color: '#d1d5db' }}>
+                      {row.stops.join(', ')}
+                    </span>
                   </td>
-                  <td style={{ padding: '11px 20px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: row.girlsBus ? '#f9a8d4' : '#374151', whiteSpace: 'nowrap' }}>
-                    {row.girlsBus || '—'}
+                  {/* Boys bus(es) */}
+                  <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                    {row.boysBuses ? (
+                      <span style={{ color: '#93c5fd', fontSize: row.boysBuses.includes(',') ? 12 : 14 }}>
+                        {row.boysBuses}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#374151', fontSize: 14 }}>—</span>
+                    )}
+                  </td>
+                  {/* Girls bus(es) */}
+                  <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                    {row.girlsBuses ? (
+                      <span style={{ color: '#f9a8d4', fontSize: row.girlsBuses.includes(',') ? 12 : 14 }}>
+                        {row.girlsBuses}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#374151', fontSize: 14 }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}

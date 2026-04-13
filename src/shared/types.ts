@@ -233,6 +233,73 @@ export interface DashboardStats {
   runsToday: number
 }
 
+// ─── Phase 3: Incident & Conflict Types ──────────────────────────────────────
+
+export type IncidentType = 'BUS_BREAKDOWN' | 'BUS_DELAYED' | 'DRIVER_ABSENT' | 'ROUTE_BLOCKED' | 'BUS_MAINTENANCE'
+export type IncidentStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED'
+export type IncidentSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+export type ConflictType = 'OVERLOAD' | 'BUS_UNAVAILABLE' | 'TIME_COLLISION' | 'STALE_DATA'
+
+export interface Incident {
+  id: string
+  session_id: string
+  type: IncidentType
+  status: IncidentStatus
+  severity: IncidentSeverity
+  title: string
+  description: string | null
+  bus_id: string | null
+  run_id: string | null
+  reported_by: string | null
+  resolved_by: string | null
+  created_at: string
+  acknowledged_at: string | null
+  resolved_at: string | null
+  metadata: string | null
+}
+
+export interface AuditLog {
+  id: string
+  entity_type: string
+  entity_id: string
+  action: string
+  actor: string | null
+  payload: string | null
+  created_at: string
+}
+
+export interface Conflict {
+  type: ConflictType
+  severity: 'WARNING' | 'CRITICAL'
+  message: string
+  run_id?: string
+  bus_id?: string
+  stop_id?: string
+}
+
+export interface CreateIncidentInput {
+  session_id: string
+  type: IncidentType
+  severity: IncidentSeverity
+  title: string
+  description?: string
+  bus_id?: string
+  run_id?: string
+  reported_by?: string
+}
+
+export interface IncidentWithDetails extends Incident {
+  bus: Bus | null
+  run: Run | null
+}
+
+export interface SystemHealth {
+  level: 'GREEN' | 'YELLOW' | 'RED'
+  openIncidents: number
+  criticalIncidents: number
+  activeConflicts: number
+}
+
 // ─── Engine / Auto-Planner Types ──────────────────────────────────────────────
 
 export type AssignmentStrategy = 'LARGEST_ROUTE_FIRST' | 'SMALLEST_ROUTE_FIRST' | 'SEQUENCE_ORDER'

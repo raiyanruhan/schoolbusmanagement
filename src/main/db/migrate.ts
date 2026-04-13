@@ -2,6 +2,42 @@ import type Database from 'better-sqlite3'
 
 const MIGRATIONS: Array<{ version: number; sql: string }> = [
   {
+    version: 3,
+    sql: `
+      CREATE TABLE IF NOT EXISTS incidents (
+        id              TEXT PRIMARY KEY,
+        session_id      TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+        type            TEXT NOT NULL CHECK(type IN ('BUS_BREAKDOWN','BUS_DELAYED','DRIVER_ABSENT','ROUTE_BLOCKED','BUS_MAINTENANCE')),
+        status          TEXT NOT NULL DEFAULT 'OPEN' CHECK(status IN ('OPEN','ACKNOWLEDGED','RESOLVED')),
+        severity        TEXT NOT NULL DEFAULT 'MEDIUM' CHECK(severity IN ('LOW','MEDIUM','HIGH','CRITICAL')),
+        title           TEXT NOT NULL,
+        description     TEXT,
+        bus_id          TEXT REFERENCES buses(id),
+        run_id          TEXT REFERENCES runs(id),
+        reported_by     TEXT,
+        resolved_by     TEXT,
+        created_at      TEXT NOT NULL,
+        acknowledged_at TEXT,
+        resolved_at     TEXT,
+        metadata        TEXT
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_log (
+        id          TEXT PRIMARY KEY,
+        entity_type TEXT NOT NULL,
+        entity_id   TEXT NOT NULL,
+        action      TEXT NOT NULL,
+        actor       TEXT,
+        payload     TEXT,
+        created_at  TEXT NOT NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_incidents_session ON incidents(session_id);
+      CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
+      CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id);
+    `
+  },
+  {
     version: 2,
     sql: `__v2_drop_buses_gender__`
   },

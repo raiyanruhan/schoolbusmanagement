@@ -4,8 +4,9 @@ import { routeRepo } from '../repositories/routeRepo'
 import { shiftRepo } from '../repositories/shiftRepo'
 import { runRepo } from '../repositories/runRepo'
 import { runAssignmentEngine } from '../engine/assignmentEngine'
+import { parseTimeToDate } from '../engine/timeCalculator'
 import type { IpcResult, Run } from '../../shared/types'
-import type { EngineOutput, ProposedRun, AssignmentStrategy, StopWithCount } from '../engine/types'
+import type { EngineOutput, ProposedRun, AssignmentStrategy, StopWithCount, TimeConfig } from '../engine/types'
 
 // ─── Input schemas ────────────────────────────────────────────────────────────
 
@@ -92,6 +93,35 @@ export const autoPlannerService = {
       const allSessionRuns = runRepo.getRunsBySession(input.session_id)
       const existingRuns = allSessionRuns.filter((r) => r.shift_id === input.shift_id)
 
+      // Build time_config from shift timing fields (if available)
+      const today = new Date()
+      let time_config: TimeConfig | undefined
+
+      if (input.direction === 'OUTBOUND') {
+        const departure = parseTimeToDate(shift.outbound_depart_school, today)
+        const deadline = parseTimeToDate(shift.outbound_arrive_stops, today)
+        if (departure && deadline && deadline > departure) {
+          time_config = {
+            base_stop_time_sec: 20,
+            per_student_time_sec: 2,
+            departure_time: departure,
+            arrival_deadline: deadline
+          }
+        }
+      } else {
+        // INBOUND: buses depart from stops, arrive at school
+        const departure = parseTimeToDate(shift.inbound_depart_school, today)
+        const deadline = parseTimeToDate(shift.inbound_arrive_school, today)
+        if (departure && deadline && deadline > departure) {
+          time_config = {
+            base_stop_time_sec: 20,
+            per_student_time_sec: 2,
+            departure_time: departure,
+            arrival_deadline: deadline
+          }
+        }
+      }
+
       // Build engine config
       const engineConfig = {
         shift_id: input.shift_id,
@@ -100,7 +130,8 @@ export const autoPlannerService = {
         gender_mode: shift.gender_mode,
         strategy: input.strategy as AssignmentStrategy,
         overload_limit: shift.default_overload,
-        underfill_threshold: 5 // default threshold — could be configurable later
+        underfill_threshold: 5,
+        ...(time_config && { time_config })
       }
 
       const output = runAssignmentEngine({

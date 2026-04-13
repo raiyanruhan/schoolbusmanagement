@@ -9,7 +9,8 @@ import type {
   CreateShiftInput, UpdateShiftInput, UpsertStopConfigInput,
   CreateRunInput,
   RunDirection, AssignmentStrategy,
-  EngineOutput, ProposedRun
+  EngineOutput, ProposedRun,
+  Incident, AuditLog, Conflict, SystemHealth, CreateIncidentInput
 } from '../shared/types'
 
 // The API exposed to the renderer — strictly typed
@@ -106,6 +107,28 @@ const api = {
       proposedRuns: ProposedRun[]
     }): Promise<IpcResult<Run[]>> =>
       ipcRenderer.invoke('autoPlanner:approve', input)
+  },
+
+  // ── Incidents & Conflicts ──────────────────────────────────────────────
+  incident: {
+    create: (input: CreateIncidentInput): Promise<IpcResult<Incident>> =>
+      ipcRenderer.invoke('incident:create', input),
+    getBySession: (session_id: string): Promise<IpcResult<Incident[]>> =>
+      ipcRenderer.invoke('incident:getBySession', session_id),
+    getOpen: (): Promise<IpcResult<Incident[]>> =>
+      ipcRenderer.invoke('incident:getOpen'),
+    acknowledge: (id: string, actor?: string): Promise<IpcResult<Incident>> =>
+      ipcRenderer.invoke('incident:acknowledge', id, actor),
+    resolve: (id: string, resolved_by?: string): Promise<IpcResult<Incident>> =>
+      ipcRenderer.invoke('incident:resolve', id, resolved_by),
+    getSystemHealth: (session_id: string): Promise<IpcResult<SystemHealth>> =>
+      ipcRenderer.invoke('incident:getSystemHealth', session_id),
+    getConflicts: (session_id: string): Promise<IpcResult<Conflict[]>> =>
+      ipcRenderer.invoke('incident:getConflicts', session_id),
+    getAuditLog: (entity_type: string, entity_id: string): Promise<IpcResult<AuditLog[]>> =>
+      ipcRenderer.invoke('incident:getAuditLog', entity_type, entity_id),
+    getRecentAuditLog: (limit?: number): Promise<IpcResult<AuditLog[]>> =>
+      ipcRenderer.invoke('incident:getRecentAuditLog', limit)
   },
 
   // ── Window management ──────────────────────────────────────────────────

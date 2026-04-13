@@ -119,6 +119,38 @@ export const runStops = sqliteTable('run_stops', {
   gender:         text('gender', { enum: ['BOYS', 'GIRLS', 'MIXED'] }).notNull().default('MIXED')
 })
 
+// ─── Incidents ─────────────────────────────────────────────────────────────
+
+export const incidents = sqliteTable('incidents', {
+  id:             text('id').primaryKey(),
+  session_id:     text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+  type:           text('type', { enum: ['BUS_BREAKDOWN', 'BUS_DELAYED', 'DRIVER_ABSENT', 'ROUTE_BLOCKED', 'BUS_MAINTENANCE'] }).notNull(),
+  status:         text('status', { enum: ['OPEN', 'ACKNOWLEDGED', 'RESOLVED'] }).notNull().default('OPEN'),
+  severity:       text('severity', { enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] }).notNull().default('MEDIUM'),
+  title:          text('title').notNull(),
+  description:    text('description'),
+  bus_id:         text('bus_id').references(() => buses.id),
+  run_id:         text('run_id').references(() => runs.id),
+  reported_by:    text('reported_by'),
+  resolved_by:    text('resolved_by'),
+  created_at:     text('created_at').notNull(),
+  acknowledged_at: text('acknowledged_at'),
+  resolved_at:    text('resolved_at'),
+  metadata:       text('metadata')
+})
+
+// ─── Audit Log ─────────────────────────────────────────────────────────────
+
+export const auditLog = sqliteTable('audit_log', {
+  id:          text('id').primaryKey(),
+  entity_type: text('entity_type').notNull(),
+  entity_id:   text('entity_id').notNull(),
+  action:      text('action').notNull(),
+  actor:       text('actor'),
+  payload:     text('payload'),
+  created_at:  text('created_at').notNull()
+})
+
 // ─── Schema export ─────────────────────────────────────────────────────────
 
 export const schema = {
@@ -129,5 +161,7 @@ export const schema = {
   stopConfigs,
   sessions,
   runs,
-  runStops
+  runStops,
+  incidents,
+  auditLog
 }

@@ -81,18 +81,19 @@ export const plannerService = {
         }
       }
 
-      // Check stops not already assigned in this session+shift
+      // Check stops not already assigned in this session+shift+direction
       for (const stopId of parsed.stop_ids) {
         const alreadyAssigned = runRepo.isStopAssignedInSession(
           parsed.session_id,
           stopId,
-          parsed.shift_id
+          parsed.shift_id,
+          parsed.direction
         )
         if (alreadyAssigned) {
           const stop = routeStops.find((s) => s.id === stopId)
           return {
             success: false,
-            error: `Stop "${stop?.name ?? stopId}" is already assigned in this session`
+            error: `Stop "${stop?.name ?? stopId}" is already assigned for ${parsed.direction} in this session`
           }
         }
       }

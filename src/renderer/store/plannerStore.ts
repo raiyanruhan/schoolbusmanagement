@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Bus, Route, Shift, Run, RouteWithStops } from '../../shared/types'
+import type { Bus, Route, Shift, Run, RouteWithStops, RunGender } from '../../shared/types'
 
 interface PlannerState {
   // Data
@@ -14,6 +14,7 @@ interface PlannerState {
   selectedRoute: RouteWithStops | null
   selectedStopIds: string[]
   plannerDirection: 'INBOUND' | 'OUTBOUND'
+  selectedGender: RunGender
 
   // Loading
   loading: boolean
@@ -27,6 +28,7 @@ interface PlannerState {
   toggleStop: (stopId: string) => void
   clearStopSelection: () => void
   setDirection: (dir: 'INBOUND' | 'OUTBOUND') => void
+  setGender: (gender: RunGender) => void
   confirmRun: (sessionId: string) => Promise<{ success: boolean; error?: string }>
   deleteRun: (runId: string) => Promise<{ success: boolean; error?: string }>
 }
@@ -41,6 +43,7 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   selectedRoute: null,
   selectedStopIds: [],
   plannerDirection: 'OUTBOUND',
+  selectedGender: 'MIXED',
   loading: false,
   error: null,
 
@@ -62,7 +65,12 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     })
   },
 
-  setSelectedShift: (shift) => set({ selectedShift: shift }),
+  setSelectedShift: (shift) => {
+    // When shift changes, reset gender to the appropriate default
+    const defaultGender: RunGender =
+      shift?.gender_mode === 'SEPARATED' ? 'BOYS' : 'MIXED'
+    set({ selectedShift: shift, selectedGender: defaultGender, selectedStopIds: [] })
+  },
   setSelectedBus: (bus) => set({ selectedBus: bus, selectedStopIds: [] }),
   setSelectedRoute: (route) => set({ selectedRoute: route, selectedStopIds: [] }),
 
@@ -107,9 +115,10 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
 
   clearStopSelection: () => set({ selectedStopIds: [] }),
   setDirection: (dir) => set({ plannerDirection: dir }),
+  setGender: (gender) => set({ selectedGender: gender }),
 
   confirmRun: async (sessionId: string) => {
-    const { selectedBus, selectedRoute, selectedShift, selectedStopIds, plannerDirection } = get()
+    const { selectedBus, selectedRoute, selectedShift, selectedStopIds, plannerDirection, selectedGender } = get()
     if (!selectedBus || !selectedRoute || !selectedShift || selectedStopIds.length === 0) {
       return { success: false, error: 'Please select a bus, route, shift, and at least one stop' }
     }
@@ -122,13 +131,17 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
       return ai - bi
     })
 
+    // Derive gender from shift mode if not explicitly overridden
+    const gender: RunGender =
+      selectedShift.gender_mode === 'COMBINED' ? 'MIXED' : selectedGender
+
     const result = await window.api.planner.createRun({
       session_id: sessionId,
       shift_id: selectedShift.id,
       bus_id: selectedBus.id,
       route_id: selectedRoute.id,
       direction: plannerDirection,
-      gender: 'MIXED',
+      gender,
       stop_ids: orderedStopIds
     })
 

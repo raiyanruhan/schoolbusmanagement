@@ -166,11 +166,22 @@ export const runRepo = {
     getDb().delete(runs).where(eq(runs.id, id)).run()
   },
 
-  isStopAssignedInSession(session_id: string, stop_id: string, shift_id: string): boolean {
+  isStopAssignedInSession(
+    session_id: string,
+    stop_id: string,
+    shift_id: string,
+    direction: Run['direction']
+  ): boolean {
     const db = getDb()
+    // A stop can be used once per shift+direction combination.
+    // INBOUND and OUTBOUND are independent assignments.
     const sessionRuns = db.select({ id: runs.id })
       .from(runs)
-      .where(and(eq(runs.session_id, session_id), eq(runs.shift_id, shift_id)))
+      .where(and(
+        eq(runs.session_id, session_id),
+        eq(runs.shift_id, shift_id),
+        eq(runs.direction, direction)
+      ))
       .all()
 
     for (const run of sessionRuns) {
