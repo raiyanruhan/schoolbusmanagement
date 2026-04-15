@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Pencil, Trash2, MapPin, GripVertical, ChevronRight, ToggleLeft, ToggleRight, Upload, FileSpreadsheet, X } from 'lucide-react'
+import { Box, Button, Text, Heading, FormControl, TextInput, Textarea, Label, Flash, IconButton, Spinner } from '@primer/react'
 import Modal from '../ui/Modal'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { useUiStore } from '../../store/uiStore'
@@ -23,38 +24,57 @@ function RouteForm({ initial, onSubmit, onCancel, loading, error }: {
   const set = (k: keyof RouteFormData, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form) }} className="space-y-4">
-      <div>
-        <label className="form-label">Route Name *</label>
-        <input className="form-input" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Route North" required />
-      </div>
-      <div>
-        <label className="form-label">Bengali Name</label>
-        <input className="form-input" value={form.name_bn} onChange={(e) => set('name_bn', e.target.value)} placeholder="বাংলা নাম" />
-      </div>
-      <div>
-        <label className="form-label">Color</label>
-        <div className="flex gap-2 flex-wrap mt-1">
+    <Box as="form" onSubmit={(e: React.FormEvent) => { e.preventDefault(); onSubmit(form) }} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <FormControl required>
+        <FormControl.Label>Route Name</FormControl.Label>
+        <TextInput value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Route North" block />
+      </FormControl>
+
+      <FormControl>
+        <FormControl.Label>Bengali Name</FormControl.Label>
+        <TextInput value={form.name_bn} onChange={(e) => set('name_bn', e.target.value)} placeholder="বাংলা নাম" block />
+      </FormControl>
+
+      <FormControl>
+        <FormControl.Label>Color</FormControl.Label>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1 }}>
           {COLORS.map((c) => (
-            <button type="button" key={c} onClick={() => set('color', c)}
-              className={`w-8 h-8 rounded-full border-2 transition-all ${form.color === c ? 'border-gray-900 scale-110' : 'border-transparent'}`}
+            <Box
+              key={c}
+              as="button"
+              type="button"
+              onClick={() => set('color', c)}
               style={{ backgroundColor: c }}
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                border: '2px solid',
+                borderColor: form.color === c ? 'fg.default' : 'transparent',
+                cursor: 'pointer',
+                padding: 0,
+                transform: form.color === c ? 'scale(1.15)' : 'scale(1)',
+                transition: 'transform 0.1s',
+              }}
             />
           ))}
-        </div>
-      </div>
-      <div>
-        <label className="form-label">Notes</label>
-        <textarea className="form-input resize-none" rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex justify-end gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="btn-secondary">Cancel</button>
-        <button type="submit" disabled={loading} className="btn-primary">
+        </Box>
+      </FormControl>
+
+      <FormControl>
+        <FormControl.Label>Notes</FormControl.Label>
+        <Textarea rows={2} value={form.notes} onChange={(e) => set('notes', e.target.value)} resize="vertical" />
+      </FormControl>
+
+      {error && <Flash variant="danger" sx={{ fontSize: 0 }}>{error}</Flash>}
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
+        <Button type="button" variant="default" onClick={onCancel}>Cancel</Button>
+        <Button type="submit" variant="primary" disabled={loading}>
           {loading ? 'Saving...' : initial ? 'Save Changes' : 'Create Route'}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </Box>
+    </Box>
   )
 }
 
@@ -68,24 +88,30 @@ function StopForm({ routeId, initial, onSubmit, onCancel, loading, error, nextOr
   const [name_bn, setNameBn] = useState(initial?.name_bn ?? '')
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(name, name_bn) }} className="space-y-4">
-      <div>
-        <label className="form-label">Stop Name *</label>
-        <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Railway Crossing" required />
-      </div>
-      <div>
-        <label className="form-label">Bengali Name</label>
-        <input className="form-input" value={name_bn} onChange={(e) => setNameBn(e.target.value)} placeholder="বাংলা নাম" />
-      </div>
-      {!initial && <p className="text-xs text-gray-400">Will be added as stop #{nextOrder}</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex justify-end gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="btn-secondary">Cancel</button>
-        <button type="submit" disabled={loading} className="btn-primary">
+    <Box as="form" onSubmit={(e: React.FormEvent) => { e.preventDefault(); onSubmit(name, name_bn) }} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <FormControl required>
+        <FormControl.Label>Stop Name</FormControl.Label>
+        <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Railway Crossing" block />
+      </FormControl>
+
+      <FormControl>
+        <FormControl.Label>Bengali Name</FormControl.Label>
+        <TextInput value={name_bn} onChange={(e) => setNameBn(e.target.value)} placeholder="বাংলা নাম" block />
+      </FormControl>
+
+      {!initial && (
+        <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Will be added as stop #{nextOrder}</Text>
+      )}
+
+      {error && <Flash variant="danger" sx={{ fontSize: 0 }}>{error}</Flash>}
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
+        <Button type="button" variant="default" onClick={onCancel}>Cancel</Button>
+        <Button type="submit" variant="primary" disabled={loading}>
           {loading ? 'Saving...' : initial ? 'Save' : 'Add Stop'}
-        </button>
-      </div>
-    </form>
+        </Button>
+      </Box>
+    </Box>
   )
 }
 
@@ -272,165 +298,230 @@ export default function RouteManagement() {
   }
 
   return (
-    <div className="flex h-full">
+    <Box sx={{ display: 'flex', height: '100%' }}>
       {/* Left: Route list */}
-      <div className="w-72 border-r border-gray-200 bg-white flex flex-col">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="section-title">Routes</h2>
-          <div className="flex items-center gap-1.5">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={handleExcelImport}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
+      <Box sx={{ width: 280, flexShrink: 0, borderRight: '1px solid', borderColor: 'border.default', display: 'flex', flexDirection: 'column', bg: 'canvas.default' }}>
+        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'border.default', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Heading as="h2" sx={{ fontSize: 1, fontWeight: 'semibold', color: 'fg.default' }}>Routes</Heading>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleExcelImport} />
+            <Button
+              size="small"
+              variant="default"
               disabled={importing}
-              className="btn-secondary btn-sm"
-              title="Import routes & stops from Excel"
+              onClick={() => fileInputRef.current?.click()}
             >
-              {importing ? <Upload className="w-3.5 h-3.5 animate-bounce" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
-              {importing ? 'Importing...' : 'Import Excel'}
-            </button>
+              {importing ? 'Importing...' : 'Import'}
+            </Button>
             {routes.length > 0 && (
-              <button
+              <IconButton
+                icon={X}
+                aria-label="Clear all routes"
+              variant="primary"
+              size="small"
                 onClick={() => setClearAllOpen(true)}
-                className="btn-sm px-2 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
-                title="Delete all routes"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+                sx={{ color: '', backgroundColor: 'danger.fg' }}
+              />
             )}
-            <button onClick={() => { setFormError(null); setAddRouteOpen(true) }} className="btn-primary btn-sm">
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
+            <IconButton
+              icon={Plus}
+              aria-label="Add route"
+              variant="primary"
+              size="small"
+              onClick={() => { setFormError(null); setAddRouteOpen(true) }}
+            />
+          </Box>
+        </Box>
 
         {loading ? (
-          <div className="p-6 text-center text-gray-400 text-sm">Loading...</div>
+          <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', color: 'fg.muted' }}><Spinner size="small" /></Box>
         ) : routes.length === 0 ? (
-          <div className="p-6 text-center text-gray-400 text-sm">No routes yet</div>
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Text sx={{ fontSize: 0, color: 'fg.muted' }}>No routes yet</Text>
+          </Box>
         ) : (
-          <div className="flex-1 overflow-y-auto">
+          <Box sx={{ flex: 1, overflowY: 'auto' }}>
             {routes.map((route) => (
-              <button
+              <Box
                 key={route.id}
+                as="button"
                 onClick={() => handleSelectRoute(route)}
-                className={`w-full text-left px-4 py-3 border-b border-gray-50 flex items-center gap-3 transition-colors
-                  ${selected?.id === route.id ? 'bg-brand-50 border-l-2 border-l-brand-500' : 'hover:bg-gray-50'}`}
+                sx={{
+                  width: '100%',
+                  textAlign: 'left',
+                  px: 3,
+                  py: '10px',
+                  borderBottom: '1px solid',
+                  borderColor: 'border.muted',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  cursor: 'pointer',
+                  border: 'none',
+                  borderLeft: '2px solid',
+                  borderLeftColor: selected?.id === route.id ? 'accent.emphasis' : 'transparent',
+                  bg: selected?.id === route.id ? 'canvas.subtle' : 'transparent',
+                  '&:hover': { bg: 'canvas.subtle' },
+                }}
               >
-                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: route.color }} />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${!route.is_active ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                <Box sx={{ width: 12, height: 12, borderRadius: '50%', flexShrink: 0 }} style={{ backgroundColor: route.color }} />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Text sx={{
+                    fontSize: 1,
+                    fontWeight: 'medium',
+                    display: 'block',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    color: route.is_active ? 'fg.default' : 'fg.muted',
+                    textDecoration: route.is_active ? 'none' : 'line-through',
+                  }}>
                     {route.name}
-                  </p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-              </button>
+                  </Text>
+                </Box>
+                <ChevronRight size={14} style={{ color: 'var(--fgColor-muted)', flexShrink: 0 }} />
+              </Box>
             ))}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {/* Right: Stops */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <Box sx={{ flex: 1, overflowY: 'auto', p: 5 }}>
         {!selected ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <MapPin className="w-12 h-12 mb-3 text-gray-300" />
-            <p className="font-medium">Select a route</p>
-            <p className="text-sm mt-1">Choose a route on the left to manage its stops</p>
-          </div>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 2, color: 'fg.muted' }}>
+            <MapPin size={48} style={{ color: 'var(--fgColor-muted)', opacity: 0.4 }} />
+            <Text sx={{ fontWeight: 'semibold', color: 'fg.default', fontSize: 1 }}>Select a route</Text>
+            <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Choose a route on the left to manage its stops</Text>
+          </Box>
         ) : (
           <>
             {/* Route header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: selected.color }} />
-                <div>
-                  <h2 className="section-title">{selected.name}</h2>
-                  {selected.name_bn && <p className="text-sm text-gray-400">{selected.name_bn}</p>}
-                </div>
-                <span className={selected.is_active ? 'badge-green' : 'badge-gray'}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ width: 16, height: 16, borderRadius: '50%', flexShrink: 0 }} style={{ backgroundColor: selected.color }} />
+                <Box>
+                  <Heading as="h2" sx={{ fontSize: 2 }}>{selected.name}</Heading>
+                  {selected.name_bn && <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block' }}>{selected.name_bn}</Text>}
+                </Box>
+                <Label variant={selected.is_active ? 'success' : 'secondary'}>
                   {selected.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleToggleRoute(selected)} className="btn-secondary btn-sm">
-                  {selected.is_active ? <ToggleRight className="w-4 h-4 text-green-600" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />}
+                </Label>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button
+                  size="small"
+                  variant="default"
+                  leadingVisual={selected.is_active ? ToggleRight : ToggleLeft}
+                  onClick={() => handleToggleRoute(selected)}
+                >
                   {selected.is_active ? 'Deactivate' : 'Activate'}
-                </button>
-                <button onClick={() => { setFormError(null); setEditRoute(selected) }} className="btn-secondary btn-sm">
-                  <Pencil className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button onClick={() => setDeleteRoute(selected)} className="btn-secondary btn-sm text-red-500 hover:bg-red-50">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+                </Button>
+                <Button size="small" variant="default" leadingVisual={Pencil} onClick={() => { setFormError(null); setEditRoute(selected) }}>
+                  Edit
+                </Button>
+                <IconButton icon={Trash2} aria-label="Delete route" variant="invisible" size="small" onClick={() => setDeleteRoute(selected)} sx={{ color: 'danger.fg' }} />
+              </Box>
+            </Box>
 
-            {/* Stops */}
-            <div className="card overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-700">Stops ({selected.stops.length})</p>
-                <button onClick={() => { setFormError(null); setAddStopOpen(true) }} className="btn-primary btn-sm">
-                  <Plus className="w-3.5 h-3.5" /> Add Stop
-                </button>
-              </div>
+            {/* Stops card */}
+            <Box sx={{ border: '1px solid', borderColor: 'border.default', borderRadius: 2, overflow: 'hidden' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 3, py: 2, borderBottom: '1px solid', borderColor: 'border.default', bg: 'canvas.subtle' }}>
+                <Text sx={{ fontSize: 0, fontWeight: 'semibold', color: 'fg.muted' }}>
+                  Stops ({selected.stops.length})
+                </Text>
+                <Button size="small" variant="primary" leadingVisual={Plus} onClick={() => { setFormError(null); setAddStopOpen(true) }}>
+                  Add Stop
+                </Button>
+              </Box>
 
               {selected.stops.length === 0 ? (
-                <div className="p-8 text-center text-gray-400 text-sm">No stops yet. Add the first stop.</div>
+                <Box sx={{ p: 5, textAlign: 'center' }}>
+                  <Text sx={{ fontSize: 0, color: 'fg.muted' }}>No stops yet. Add the first stop.</Text>
+                </Box>
               ) : (
-                <ul>
+                <Box as="ul" sx={{ listStyle: 'none', margin: 0, padding: 0 }}>
                   {selected.stops.map((stop, i) => (
-                    <li
+                    <Box
                       key={stop.id}
+                      as="li"
                       draggable
                       onDragStart={() => handleDragStart(stop.id)}
-                      onDragOver={(e) => e.preventDefault()}
+                      onDragOver={(e: React.DragEvent) => e.preventDefault()}
                       onDrop={() => handleDrop(stop.id)}
-                      className={`flex items-center gap-3 px-4 py-3 border-b border-gray-50 group
-                        ${dragging === stop.id ? 'opacity-50' : ''}
-                        ${!stop.is_active ? 'opacity-60' : ''}`}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        px: 3,
+                        py: '10px',
+                        borderBottom: '1px solid',
+                        borderColor: 'border.muted',
+                        opacity: dragging === stop.id || !stop.is_active ? 0.5 : 1,
+                        '&:last-child': { borderBottom: 'none' },
+                        '&:hover .stop-actions': { opacity: 1 },
+                      }}
                     >
-                      <GripVertical className="w-4 h-4 text-gray-300 cursor-grab active:cursor-grabbing shrink-0" />
-                      <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs flex items-center justify-center font-mono shrink-0">
-                        {i + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${!stop.is_active ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                      <Box sx={{ color: 'fg.subtle', cursor: 'grab', flexShrink: 0 }}>
+                        <GripVertical size={16} />
+                      </Box>
+                      <Box sx={{
+                        width: 24, height: 24, borderRadius: '50%',
+                        bg: 'canvas.subtle', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <Text sx={{ fontSize: 0, color: 'fg.muted', fontFamily: 'mono' }}>{i + 1}</Text>
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Text sx={{
+                          fontSize: 1,
+                          fontWeight: 'medium',
+                          display: 'block',
+                          color: stop.is_active ? 'fg.default' : 'fg.muted',
+                          textDecoration: stop.is_active ? 'none' : 'line-through',
+                        }}>
                           {stop.name}
-                        </p>
-                        {stop.name_bn && <p className="text-xs text-gray-400">{stop.name_bn}</p>}
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
+                        </Text>
+                        {stop.name_bn && <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block' }}>{stop.name_bn}</Text>}
+                      </Box>
+                      <Box className="stop-actions" sx={{ display: 'flex', alignItems: 'center', gap: 1, opacity: 0, transition: 'opacity 0.15s' }}>
+                        <IconButton
+                          icon={stop.is_active ? ToggleRight : ToggleLeft}
+                          aria-label={stop.is_active ? 'Deactivate stop' : 'Activate stop'}
+                          variant="invisible"
+                          size="small"
                           onClick={() => handleToggleStop(stop)}
-                          className="btn-ghost btn-sm p-1.5"
-                          title={stop.is_active ? 'Deactivate' : 'Activate'}
-                        >
-                          {stop.is_active ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4 text-gray-400" />}
-                        </button>
-                        <button onClick={() => { setFormError(null); setEditStop(stop) }} className="btn-ghost btn-sm p-1.5">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setDeleteStop(stop)} className="btn-ghost btn-sm p-1.5 text-red-500 hover:bg-red-50">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </li>
+                          sx={{ color: stop.is_active ? 'success.fg' : 'fg.muted' }}
+                        />
+                        <IconButton
+                          icon={Pencil}
+                          aria-label="Edit stop"
+                          variant="invisible"
+                          size="small"
+                          onClick={() => { setFormError(null); setEditStop(stop) }}
+                        />
+                        <IconButton
+                          icon={Trash2}
+                          aria-label="Delete stop"
+                          variant="invisible"
+                          size="small"
+                          onClick={() => setDeleteStop(stop)}
+                          sx={{ color: 'danger.fg' }}
+                        />
+                      </Box>
+                    </Box>
                   ))}
-                </ul>
+                </Box>
               )}
-            </div>
-            <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-              <GripVertical className="w-3 h-3" /> Drag stops to reorder
-            </p>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, color: 'fg.subtle' }}>
+              <GripVertical size={12} />
+              <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Drag stops to reorder</Text>
+            </Box>
           </>
         )}
-      </div>
+      </Box>
 
       {/* Modals */}
       <Modal open={addRouteOpen} onClose={() => setAddRouteOpen(false)} title="New Route">
@@ -462,6 +553,6 @@ export default function RouteManagement() {
         confirmLabel="Clear All"
         danger
       />
-    </div>
+    </Box>
   )
 }

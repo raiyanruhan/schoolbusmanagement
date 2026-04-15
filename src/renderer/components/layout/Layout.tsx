@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { useEffect } from 'react'
+import { Box } from '@primer/react'
 import Sidebar from './Sidebar'
 import Toast from '../ui/Toast'
 import { useSessionStore } from '../../store/sessionStore'
@@ -12,12 +13,12 @@ export default function Layout() {
   }, [loadSession])
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-gray-50">
+      <Box as="main" sx={{ flex: 1, overflowY: 'auto', bg: 'canvas.default' }}>
         <Outlet />
-      </main>
+      </Box>
       <Toast />
-    </div>
+    </Box>
   )
 }

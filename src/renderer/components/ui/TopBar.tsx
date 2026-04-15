@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Settings, ArrowLeft } from 'lucide-react'
+import { Box, Button, Heading, IconButton } from '@primer/react'
 
 interface TopBarProps {
   showBack?: boolean
@@ -13,29 +14,46 @@ export default function TopBar({ showBack, backTo = '/', backLabel = 'Back', tit
   const navigate = useNavigate()
 
   return (
-    <div className="flex items-center justify-between px-6 py-4">
-      <div className="flex items-center gap-3">
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        px: 4,
+        py: 3,
+        borderBottom: '1px solid',
+        borderColor: 'border.default',
+        bg: 'canvas.default',
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
         {showBack && (
-          <button
+          <Button
+            variant="invisible"
+            size="small"
+            leadingVisual={ArrowLeft}
             onClick={() => navigate(backTo)}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+            sx={{ color: 'fg.muted' }}
           >
-            <ArrowLeft className="w-4 h-4" />
             {backLabel}
-          </button>
+          </Button>
         )}
-        {title && <h1 className="text-lg font-semibold text-gray-800">{title}</h1>}
-      </div>
-      <div className="flex items-center gap-2">
+        {title && (
+          <Heading as="h1" sx={{ fontSize: 2, fontWeight: 'semibold', color: 'fg.default' }}>
+            {title}
+          </Heading>
+        )}
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {right}
-        <button
+        <IconButton
+          icon={Settings}
+          aria-label="Settings"
+          variant="invisible"
           onClick={() => navigate('/settings')}
-          className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-          title="Settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
+          sx={{ color: 'fg.muted' }}
+        />
+      </Box>
+    </Box>
   )
 }

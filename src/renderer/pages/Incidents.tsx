@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, AlertTriangle, CheckCircle, Clock, Plus, X, RefreshCw } from 'lucide-react'
+import { Box, Button, Text, Heading, FormControl, TextInput, Select, Textarea, Label, Flash, Spinner, IconButton } from '@primer/react'
 import type { Incident, CreateIncidentInput, IncidentType, IncidentSeverity, Bus } from '../../shared/types'
 import { useSessionStore } from '../store/sessionStore'
 
@@ -12,20 +13,20 @@ const TYPE_LABELS: Record<IncidentType, string> = {
   BUS_MAINTENANCE: 'Bus Maintenance'
 }
 
-const SEVERITY_COLORS: Record<IncidentSeverity, string> = {
-  LOW: 'bg-gray-100 text-gray-600',
-  MEDIUM: 'bg-yellow-100 text-yellow-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  CRITICAL: 'bg-red-100 text-red-700'
+type SeverityVariant = 'secondary' | 'attention' | 'danger'
+const SEVERITY_VARIANT: Record<IncidentSeverity, SeverityVariant> = {
+  LOW: 'secondary',
+  MEDIUM: 'attention',
+  HIGH: 'attention',
+  CRITICAL: 'danger',
 }
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
-  OPEN: <AlertTriangle className="w-3.5 h-3.5 text-red-500" />,
-  ACKNOWLEDGED: <Clock className="w-3.5 h-3.5 text-yellow-500" />,
-  RESOLVED: <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+  OPEN: <AlertTriangle size={14} style={{ color: 'var(--fgColor-danger)' }} />,
+  ACKNOWLEDGED: <Clock size={14} style={{ color: 'var(--fgColor-attention)' }} />,
+  RESOLVED: <CheckCircle size={14} style={{ color: 'var(--fgColor-success)' }} />,
 }
 
-// Incident types that require a bus to be specified
 const BUS_REQUIRED_TYPES: IncidentType[] = ['BUS_BREAKDOWN', 'BUS_DELAYED', 'DRIVER_ABSENT', 'BUS_MAINTENANCE']
 
 const BLANK_FORM: Omit<CreateIncidentInput, 'session_id'> = {
@@ -63,7 +64,6 @@ export default function Incidents() {
 
   useEffect(() => { load() }, [load])
 
-  // Auto-generate title when type + bus changes
   const busName = buses.find((b) => b.id === form.bus_id)?.number
   const busSuffix = busName ? ` — Bus ${busName}` : ''
   const autoTitle = `${TYPE_LABELS[form.type]}${busSuffix}`
@@ -72,7 +72,6 @@ export default function Incidents() {
     if (!session) return
     const effectiveTitle = (form.title || autoTitle).trim()
     if (!effectiveTitle) return
-    // Warn if bus-related incident has no bus selected
     if (BUS_REQUIRED_TYPES.includes(form.type) && !form.bus_id) {
       setError('Please select the affected bus for this incident type')
       return
@@ -98,233 +97,152 @@ export default function Incidents() {
     setSubmitting(false)
   }
 
-  const handleAcknowledge = async (id: string) => {
-    await window.api.incident.acknowledge(id)
-    load()
-  }
-
-  const handleResolve = async (id: string) => {
-    await window.api.incident.resolve(id)
-    load()
-    loadStats()
-  }
+  const handleAcknowledge = async (id: string) => { await window.api.incident.acknowledge(id); load() }
+  const handleResolve = async (id: string) => { await window.api.incident.resolve(id); load(); loadStats() }
 
   const open = incidents.filter((i) => i.status !== 'RESOLVED')
   const resolved = incidents.filter((i) => i.status === 'RESOLVED')
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <Box sx={{ minHeight: '100vh', bg: 'canvas.default', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-gray-100 bg-white">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/')}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="font-semibold text-gray-900 text-sm">Incidents</h1>
-            <p className="text-xs text-gray-400">{open.length} open</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={load}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Report
-          </button>
-        </div>
-      </div>
+      <Box sx={{ px: 4, pt: 4, pb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'border.default', bg: 'canvas.default' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <IconButton icon={ArrowLeft} aria-label="Back" variant="invisible" onClick={() => navigate('/')} sx={{ color: 'fg.muted' }} />
+          <Box>
+            <Heading as="h1" sx={{ fontSize: 2 }}>Incidents</Heading>
+            <Text sx={{ fontSize: 0, color: 'fg.muted' }}>{open.length} open</Text>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton icon={RefreshCw} aria-label="Refresh" variant="invisible" onClick={load} sx={{ color: 'fg.muted' }} />
+          <Button variant="danger" size="small" leadingVisual={Plus} onClick={() => setShowForm(true)}>Report</Button>
+        </Box>
+      </Box>
 
       {/* New incident form */}
       {showForm && (
-        <div className="mx-6 mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-sm text-gray-900">Report Incident</h2>
-            <button onClick={() => { setShowForm(false); setError(null) }} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+        <Box sx={{ mx: 4, mt: 3, bg: 'canvas.subtle', border: '1px solid', borderColor: 'border.default', borderRadius: 2, p: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+            <Heading as="h2" sx={{ fontSize: 2 }}>Report Incident</Heading>
+            <IconButton icon={X} aria-label="Close" variant="invisible" size="small" onClick={() => { setShowForm(false); setError(null) }} />
+          </Box>
 
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Type</label>
-                <select
-                  value={form.type}
-                  onChange={(e) => {
-                    const type = e.target.value as IncidentType
-                    setForm((f) => ({
-                      ...f,
-                      type,
-                      // Clear bus selection if new type doesn't need it
-                      bus_id: BUS_REQUIRED_TYPES.includes(type) ? f.bus_id : undefined,
-                      // Auto-update title if it was auto-generated
-                      title: f.title === autoTitle || f.title === '' ? '' : f.title
-                    }))
-                  }}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  {Object.entries(TYPE_LABELS).map(([v, l]) => (
-                    <option key={v} value={v}>{l}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Severity</label>
-                <select
-                  value={form.severity}
-                  onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value as IncidentSeverity }))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
-                  <option value="CRITICAL">Critical</option>
-                </select>
-              </div>
-            </div>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+              <FormControl>
+                <FormControl.Label>Type</FormControl.Label>
+                <Select value={form.type} onChange={(e) => {
+                  const type = e.target.value as IncidentType
+                  setForm((f) => ({ ...f, type, bus_id: BUS_REQUIRED_TYPES.includes(type) ? f.bus_id : undefined, title: f.title === autoTitle || f.title === '' ? '' : f.title }))
+                }}>
+                  {Object.entries(TYPE_LABELS).map(([v, l]) => <Select.Option key={v} value={v}>{l}</Select.Option>)}
+                </Select>
+              </FormControl>
+              <FormControl>
+                <FormControl.Label>Severity</FormControl.Label>
+                <Select value={form.severity} onChange={(e) => setForm((f) => ({ ...f, severity: e.target.value as IncidentSeverity }))}>
+                  <Select.Option value="LOW">Low</Select.Option>
+                  <Select.Option value="MEDIUM">Medium</Select.Option>
+                  <Select.Option value="HIGH">High</Select.Option>
+                  <Select.Option value="CRITICAL">Critical</Select.Option>
+                </Select>
+              </FormControl>
+            </Box>
 
-            {/* Bus selector — required for bus-related incidents */}
             {BUS_REQUIRED_TYPES.includes(form.type) && (
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">
-                  Affected Bus <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.bus_id ?? ''}
-                  onChange={(e) => setForm((f) => ({ ...f, bus_id: e.target.value || undefined }))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">— Select bus —</option>
-                  {buses.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      Bus {b.number} ({b.capacity} seats) — {b.status}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <FormControl required>
+                <FormControl.Label>Affected Bus</FormControl.Label>
+                <Select value={form.bus_id ?? ''} onChange={(e) => setForm((f) => ({ ...f, bus_id: e.target.value || undefined }))}>
+                  <Select.Option value="">— Select bus —</Select.Option>
+                  {buses.map((b) => <Select.Option key={b.id} value={b.id}>Bus {b.number} ({b.capacity} seats) — {b.status}</Select.Option>)}
+                </Select>
+              </FormControl>
             )}
 
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Title <span className="text-red-500">*</span></label>
-              <input
-                type="text"
+            <FormControl required>
+              <FormControl.Label>Title</FormControl.Label>
+              <TextInput
                 value={form.title || autoTitle}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 placeholder={autoTitle}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                block
               />
-            </div>
+            </FormControl>
 
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Description</label>
-              <textarea
+            <FormControl>
+              <FormControl.Label>Description</FormControl.Label>
+              <Textarea
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 rows={2}
                 placeholder="Additional details..."
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                resize="vertical"
               />
-            </div>
+            </FormControl>
 
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Reported by</label>
-              <input
-                type="text"
+            <FormControl>
+              <FormControl.Label>Reported by</FormControl.Label>
+              <TextInput
                 value={form.reported_by}
                 onChange={(e) => setForm((f) => ({ ...f, reported_by: e.target.value }))}
                 placeholder="Name (optional)"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                block
               />
-            </div>
+            </FormControl>
 
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <Flash variant="danger" sx={{ fontSize: 0 }}>{error}</Flash>}
 
-            <div className="flex gap-2 pt-1">
-              <button
-                onClick={() => { setShowForm(false); setError(null) }}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={submitting || !form.title.trim()}
-                className="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
-              >
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button variant="default" onClick={() => { setShowForm(false); setError(null) }} sx={{ flex: 1 }}>Cancel</Button>
+              <Button variant="danger" disabled={submitting || !form.title.trim()} onClick={handleCreate} sx={{ flex: 1 }}>
                 {submitting ? 'Reporting…' : 'Report Incident'}
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </Box>
+          </Box>
+        </Box>
       )}
 
       {/* Incidents list */}
-      <div className="flex-1 px-6 py-4 space-y-2 overflow-auto">
+      <Box sx={{ flex: 1, px: 4, py: 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
         {loading && incidents.length === 0 ? (
-          <div className="flex items-center justify-center h-32 text-gray-400 gap-2">
-            <RefreshCw className="w-5 h-5 animate-spin" />
-            <span className="text-sm">Loading…</span>
-          </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 128, gap: 2, color: 'fg.muted' }}>
+            <Spinner size="small" /><Text sx={{ fontSize: 1 }}>Loading…</Text>
+          </Box>
         ) : incidents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
-            <CheckCircle className="w-10 h-10 text-green-400" />
-            <p className="text-sm font-medium text-gray-500">No incidents today</p>
-            <p className="text-xs text-gray-400">All systems operational</p>
-          </div>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 192, gap: 2, color: 'fg.muted' }}>
+            <CheckCircle size={40} style={{ color: 'var(--fgColor-success)', opacity: 0.6 }} />
+            <Text sx={{ fontSize: 1, fontWeight: 'semibold', color: 'fg.default' }}>No incidents today</Text>
+            <Text sx={{ fontSize: 0 }}>All systems operational</Text>
+          </Box>
         ) : (
           <>
             {open.length > 0 && (
-              <div className="space-y-2">
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {open.map((incident) => (
-                  <IncidentCard
-                    key={incident.id}
-                    incident={incident}
-                    onAcknowledge={handleAcknowledge}
-                    onResolve={handleResolve}
-                  />
+                  <IncidentCard key={incident.id} incident={incident} onAcknowledge={handleAcknowledge} onResolve={handleResolve} />
                 ))}
-              </div>
+              </Box>
             )}
-
             {resolved.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider px-1 mb-2">Resolved</p>
-                <div className="space-y-2">
+              <Box sx={{ mt: 3 }}>
+                <Text sx={{ fontSize: 0, color: 'fg.muted', fontWeight: 'semibold', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 2 }}>Resolved</Text>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {resolved.map((incident) => (
-                    <IncidentCard
-                      key={incident.id}
-                      incident={incident}
-                      onAcknowledge={handleAcknowledge}
-                      onResolve={handleResolve}
-                    />
+                    <IncidentCard key={incident.id} incident={incident} onAcknowledge={handleAcknowledge} onResolve={handleResolve} />
                   ))}
-                </div>
-              </div>
+                </Box>
+              </Box>
             )}
           </>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   )
 }
 
-function IncidentCard({
-  incident,
-  onAcknowledge,
-  onResolve
-}: {
+function IncidentCard({ incident, onAcknowledge, onResolve }: {
   incident: Incident
   onAcknowledge: (id: string) => void
   onResolve: (id: string) => void
@@ -333,46 +251,43 @@ function IncidentCard({
   const time = new Date(incident.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className={`bg-white rounded-xl border p-4 ${isResolved ? 'border-gray-100 opacity-60' : 'border-gray-200'}`}>
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5">{STATUS_ICON[incident.status]}</div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-            <span className="text-sm font-medium text-gray-900 truncate">{incident.title}</span>
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${SEVERITY_COLORS[incident.severity]}`}>
-              {incident.severity}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span>{TYPE_LABELS[incident.type]}</span>
-            <span>·</span>
-            <span>{time}</span>
-            {incident.reported_by && <><span>·</span><span>{incident.reported_by}</span></>}
-          </div>
+    <Box
+      sx={{
+        bg: 'canvas.default',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'border.default',
+        p: 3,
+        opacity: isResolved ? 0.65 : 1,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+        <Box sx={{ mt: '2px', flexShrink: 0 }}>{STATUS_ICON[incident.status]}</Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', mb: 1 }}>
+            <Text sx={{ fontSize: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{incident.title}</Text>
+            <Label variant={SEVERITY_VARIANT[incident.severity]}>{incident.severity}</Label>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'fg.muted' }}>
+            <Text sx={{ fontSize: 0 }}>{TYPE_LABELS[incident.type]}</Text>
+            <Text sx={{ fontSize: 0 }}>·</Text>
+            <Text sx={{ fontSize: 0 }}>{time}</Text>
+            {incident.reported_by && <><Text sx={{ fontSize: 0 }}>·</Text><Text sx={{ fontSize: 0 }}>{incident.reported_by}</Text></>}
+          </Box>
           {incident.description && (
-            <p className="text-xs text-gray-500 mt-1.5">{incident.description}</p>
+            <Text sx={{ fontSize: 0, color: 'fg.muted', mt: 1, display: 'block' }}>{incident.description}</Text>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {!isResolved && (
-        <div className="flex gap-2 mt-3 pt-3 border-t border-gray-50">
+        <Box sx={{ display: 'flex', gap: 2, mt: 3, pt: 3, borderTop: '1px solid', borderColor: 'border.muted' }}>
           {incident.status === 'OPEN' && (
-            <button
-              onClick={() => onAcknowledge(incident.id)}
-              className="flex-1 py-1.5 rounded-lg border border-yellow-200 text-xs text-yellow-700 bg-yellow-50 hover:bg-yellow-100 transition-colors font-medium"
-            >
-              Acknowledge
-            </button>
+            <Button size="small" variant="default" onClick={() => onAcknowledge(incident.id)} sx={{ flex: 1 }}>Acknowledge</Button>
           )}
-          <button
-            onClick={() => onResolve(incident.id)}
-            className="flex-1 py-1.5 rounded-lg border border-green-200 text-xs text-green-700 bg-green-50 hover:bg-green-100 transition-colors font-medium"
-          >
-            Mark Resolved
-          </button>
-        </div>
+          <Button size="small" variant="primary" onClick={() => onResolve(incident.id)} sx={{ flex: 1 }}>Mark Resolved</Button>
+        </Box>
       )}
-    </div>
+    </Box>
   )
 }

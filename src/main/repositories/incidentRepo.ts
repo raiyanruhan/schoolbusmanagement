@@ -40,7 +40,8 @@ export const incidentRepo = {
     return db.select()
       .from(incidents)
       .where(eq(incidents.session_id, session_id))
-      .orderBy(desc(incidents.created_at)) as Incident[]
+      .orderBy(desc(incidents.created_at))
+      .all() as Incident[]
   },
 
   getOpen(): Incident[] {
@@ -48,7 +49,8 @@ export const incidentRepo = {
     return db.select()
       .from(incidents)
       .where(ne(incidents.status, 'RESOLVED'))
-      .orderBy(desc(incidents.created_at)) as Incident[]
+      .orderBy(desc(incidents.created_at))
+      .all() as Incident[]
   },
 
   acknowledge(id: string): Incident | null {

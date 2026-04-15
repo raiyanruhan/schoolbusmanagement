@@ -1,72 +1,170 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Bus, MapPin, Clock, CalendarDays, ChevronLeft, ChevronRight
+  LayoutDashboard, Bus, MapPin, Clock, CalendarDays,
+  ChevronLeft, ChevronRight, Sun, Moon
 } from 'lucide-react'
+import { Box, IconButton, Text } from '@primer/react'
 import { useUiStore } from '../../store/uiStore'
-import { cn } from '../../utils/cn'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/buses', icon: Bus, label: 'Fleet' },
-  { to: '/routes', icon: MapPin, label: 'Routes' },
-  { to: '/shifts', icon: Clock, label: 'Shifts' },
-  { to: '/planner', icon: CalendarDays, label: 'Planner' }
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/settings/buses', icon: Bus, label: 'Fleet' },
+  { to: '/settings/routes', icon: MapPin, label: 'Routes' },
+  { to: '/settings/shifts', icon: Clock, label: 'Shifts' },
+  { to: '/planner', icon: CalendarDays, label: 'Planner' },
 ]
 
 export default function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar } = useUiStore()
+  const { sidebarCollapsed, toggleSidebar, colorMode, setColorMode } = useUiStore()
+  const location = useLocation()
 
   return (
-    <aside
-      className={cn(
-        'flex flex-col bg-gray-900 text-white transition-all duration-200 shrink-0',
-        sidebarCollapsed ? 'w-16' : 'w-56'
-      )}
+    <Box
+      as="aside"
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        bg: 'canvas.inset',
+        borderRight: '1px solid',
+        borderColor: 'border.default',
+        transition: 'width 200ms ease',
+        width: sidebarCollapsed ? 64 : 224,
+        flexShrink: 0,
+        overflow: 'hidden',
+      }}
     >
       {/* Logo */}
-      <div className={cn('flex items-center gap-3 px-4 py-5 border-b border-gray-700', sidebarCollapsed && 'justify-center px-2')}>
-        <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center shrink-0">
-          <Bus className="w-5 h-5 text-white" />
-        </div>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          px: sidebarCollapsed ? 2 : 3,
+          py: 3,
+          borderBottom: '1px solid',
+          borderColor: 'border.default',
+          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+          minHeight: 56,
+        }}
+      >
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            bg: 'accent.emphasis',
+            borderRadius: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: 'fg.onEmphasis',
+          }}
+        >
+          <Bus size={18} />
+        </Box>
         {!sidebarCollapsed && (
-          <div>
-            <p className="text-sm font-semibold leading-tight">School Bus</p>
-            <p className="text-xs text-gray-400">Manager</p>
-          </div>
+          <Box>
+            <Text as="p" sx={{ fontSize: 1, fontWeight: 'semibold', lineHeight: 1.2, color: 'fg.default', m: 0 }}>
+              School Bus
+            </Text>
+            <Text as="p" sx={{ fontSize: 0, color: 'fg.muted', m: 0 }}>
+              Manager
+            </Text>
+          </Box>
         )}
-      </div>
+      </Box>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-                isActive
-                  ? 'bg-brand-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white',
-                sidebarCollapsed && 'justify-center px-2'
-              )
-            }
-            title={sidebarCollapsed ? label : undefined}
-          >
-            <Icon className="w-5 h-5 shrink-0" />
-            {!sidebarCollapsed && <span className="truncate">{label}</span>}
-          </NavLink>
-        ))}
-      </nav>
+      <Box as="nav" sx={{ flex: 1, px: 1, py: 2, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {navItems.map(({ to, icon: Icon, label }) => {
+          const isActive = to === '/' ? location.pathname === '/' : location.pathname.startsWith(to)
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              title={sidebarCollapsed ? label : undefined}
+              style={{ textDecoration: 'none' }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  px: sidebarCollapsed ? 0 : 2,
+                  py: '6px',
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+                  bg: isActive ? 'accent.emphasis' : 'transparent',
+                  color: isActive ? 'fg.onEmphasis' : 'fg.muted',
+                  '&:hover': {
+                    bg: isActive ? 'accent.emphasis' : 'actionListItem.default.hoverBg',
+                    color: isActive ? 'fg.onEmphasis' : 'fg.default',
+                  },
+                }}
+              >
+                <Icon size={18} style={{ flexShrink: 0 }} />
+                {!sidebarCollapsed && (
+                  <Text sx={{ fontSize: 1, fontWeight: 'medium', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {label}
+                  </Text>
+                )}
+              </Box>
+            </NavLink>
+          )
+        })}
+      </Box>
+
+      {/* Theme toggle */}
+      <Box
+        sx={{
+          px: 1,
+          py: 1,
+          borderTop: '1px solid',
+          borderColor: 'border.default',
+          display: 'flex',
+          justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
+          pl: sidebarCollapsed ? 1 : 2,
+        }}
+      >
+        <IconButton
+          icon={colorMode === 'day' ? Moon : Sun}
+          aria-label={colorMode === 'day' ? 'Switch to dark mode' : 'Switch to light mode'}
+          variant="invisible"
+          size="small"
+          onClick={() => setColorMode(colorMode === 'day' ? 'night' : 'day')}
+          sx={{ color: 'fg.muted' }}
+        />
+        {!sidebarCollapsed && (
+          <Text sx={{ fontSize: 0, color: 'fg.muted', alignSelf: 'center', ml: 1 }}>
+            {colorMode === 'day' ? 'Dark mode' : 'Light mode'}
+          </Text>
+        )}
+      </Box>
 
       {/* Collapse toggle */}
-      <button
+      <Box
+        as="button"
         onClick={toggleSidebar}
-        className="flex items-center justify-center p-3 border-t border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+          borderTop: '1px solid',
+          borderColor: 'border.default',
+          bg: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'fg.muted',
+          '&:hover': { bg: 'actionListItem.default.hoverBg', color: 'fg.default' },
+        }}
       >
-        {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        {!sidebarCollapsed && <span className="ml-2 text-xs">Collapse</span>}
-      </button>
-    </aside>
+        {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        {!sidebarCollapsed && (
+          <Text sx={{ ml: 1, fontSize: 0 }}>Collapse</Text>
+        )}
+      </Box>
+    </Box>
   )
 }

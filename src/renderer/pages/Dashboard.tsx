@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bus, MapPin, Users, Activity, ArrowRight, Settings, Monitor, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
+import { Box, Button, Heading, Text, Flash, IconButton } from '@primer/react'
 import { useSessionStore } from '../store/sessionStore'
 import type { SystemHealth } from '../../shared/types'
 
@@ -25,126 +26,162 @@ export default function Dashboard() {
   }, [])
 
   const today = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long', year: 'numeric', month: 'long', day: `numeric`
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <Box sx={{ minHeight: '100vh', bg: 'canvas.default', display: 'flex', flexDirection: 'column' }}>
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-8 pt-6 pb-2">
-        <div className="flex items-center gap-2.5">
-          <span className="font-semibold text-gray-800 text-sm tracking-tight">School Bus Manager</span>
-        </div>
-        <button
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 5, pt: 4, pb: 2 }}>
+        <Text sx={{ fontWeight: 'semibold', color: 'fg.default', fontSize: 1 }}>School Bus Manager</Text>
+        <IconButton
+          icon={Settings}
+          aria-label="Settings"
+          variant="invisible"
           onClick={() => navigate('/settings')}
-          className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-700 transition-all"
-          title="Settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-      </div>
+          sx={{ color: 'fg.muted' }}
+        />
+      </Box>
 
-      {/* System health alert bar */}
+      {/* System health alert */}
       {health && health.level !== 'GREEN' && (
-        <div
-          onClick={() => navigate('/incidents')}
-          className={`mx-8 mt-2 rounded-xl px-4 py-2.5 flex items-center gap-2.5 cursor-pointer transition-colors ${
-            health.level === 'RED'
-              ? 'bg-red-50 border border-red-200 hover:bg-red-100'
-              : 'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100'
-          }`}
-        >
-          {health.level === 'RED'
-            ? <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-            : <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
-          }
-          <div className="flex-1">
-            <p className={`text-xs font-semibold ${health.level === 'RED' ? 'text-red-700' : 'text-yellow-700'}`}>
-              {health.level === 'RED' ? 'Critical issues require attention' : 'Active incidents'}
-            </p>
-            <p className={`text-xs ${health.level === 'RED' ? 'text-red-500' : 'text-yellow-600'}`}>
-              {health.openIncidents} open incident{health.openIncidents !== 1 ? 's' : ''}
-              {health.activeConflicts > 0 && ` · ${health.activeConflicts} conflict${health.activeConflicts !== 1 ? 's' : ''}`}
-            </p>
-          </div>
-          <ArrowRight className={`w-3.5 h-3.5 shrink-0 ${health.level === 'RED' ? 'text-red-400' : 'text-yellow-400'}`} />
-        </div>
+        <Box sx={{ mx: 5, mt: 2 }}>
+          <Flash
+            variant={health.level === 'RED' ? 'danger' : 'warning'}
+            sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}
+            onClick={() => navigate('/incidents')}
+          >
+            {health.level === 'RED'
+              ? <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              : <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+            }
+            <Box sx={{ flex: 1 }}>
+              <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block' }}>
+                {health.level === 'RED' ? 'Critical issues require attention' : 'Active incidents'}
+              </Text>
+              <Text sx={{ fontSize: 0 }}>
+                {health.openIncidents} open incident{health.openIncidents !== 1 ? 's' : ''}
+                {health.activeConflicts > 0 && ` · ${health.activeConflicts} conflict${health.activeConflicts !== 1 ? 's' : ''}`}
+              </Text>
+            </Box>
+            <ArrowRight size={14} style={{ flexShrink: 0 }} />
+          </Flash>
+        </Box>
       )}
       {health && health.level === 'GREEN' && (
-        <div className="mx-8 mt-2 rounded-xl px-4 py-2 flex items-center gap-2 bg-green-50 border border-green-100">
-          <CheckCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />
-          <p className="text-xs text-green-600 font-medium">All systems operational</p>
-        </div>
+        <Box sx={{ mx: 5, mt: 2 }}>
+          <Flash variant="success" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <CheckCircle size={14} />
+            <Text sx={{ fontSize: 0, fontWeight: 'medium' }}>All systems operational</Text>
+          </Flash>
+        </Box>
       )}
 
       {/* Hero */}
-      <div className="px-8 pt-10 pb-6">
-        <p className="text-sm text-gray-400 mb-1">{today}</p>
-        <h1 className="text-3xl font-bold text-gray-900 leading-tight">
-          Good {getGreeting()}, {user}!<br />
-        </h1>
-      </div>
+      <Box sx={{ px: 5, pt: 5, pb: 4 }}>
+        <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mb: 1 }}>{today}</Text>
+        <Heading as="h1" sx={{ fontSize: 5, fontWeight: 'bold', color: 'fg.default', lineHeight: 1.2 }}>
+          Good {getGreeting()}, {user}!
+        </Heading>
+      </Box>
 
       {/* Stat cards */}
-      <div className="px-8 grid grid-cols-2 gap-3 mb-6">
+      <Box sx={{ px: 5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 4 }}>
         {[
           { icon: Bus,      label: 'Buses',    value: stats?.totalBuses ?? '—',    sub: `${stats?.activeBuses ?? 0} active` },
           { icon: MapPin,   label: 'Routes',   value: stats?.totalRoutes ?? '—',   sub: 'active routes' },
           { icon: Users,    label: 'Students', value: stats?.totalStudents ?? '—', sub: 'planned today' },
           { icon: Activity, label: 'Runs',     value: stats?.runsToday ?? '—',     sub: "today's runs" },
         ].map(({ icon: Icon, label, value, sub }) => (
-          <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-            <Icon className="w-5 h-5 text-brand-500 mb-3" />
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
-          </div>
+          <Box
+            key={label}
+            sx={{
+              bg: 'canvas.subtle',
+              borderRadius: 3,
+              p: 4,
+              border: '1px solid',
+              borderColor: 'border.default',
+            }}
+          >
+            <Box sx={{ color: 'accent.fg', mb: 2 }}>
+            </Box>
+            <Text as="p" sx={{ fontSize: 5, fontWeight: 'bold', color: 'fg.default', m: 0 }}>{value}</Text>
+            <Text as="p" sx={{ fontSize: 0, color: 'fg.muted', mt: 1, m: 0 }}>{sub}</Text>
+          </Box>
         ))}
-      </div>
+      </Box>
 
       {/* Primary actions */}
-      <div className="px-8 mt-auto pb-10 flex flex-col gap-3">
-        <button
+      <Box sx={{ px: 5, mt: 'auto', pb: 5, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Button
+          variant="primary"
+          size="large"
           onClick={() => navigate('/planner')}
-          className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white rounded-2xl px-6 py-4 flex items-center justify-between transition-colors shadow-md shadow-brand-200"
+          sx={{ width: '100%', justifyContent: 'space-between', py: 3, borderRadius: 3 }}
         >
-          <div className="text-left">
-            <p className="font-semibold text-base">Open Planner</p>
-            <p className="text-brand-200 text-sm mt-0.5">Assign buses to routes</p>
-          </div>
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <ArrowRight className="w-5 h-5" />
-          </div>
-        </button>
+          <Box sx={{ textAlign: 'left' }}>
+            <Text sx={{ fontWeight: 'semibold', fontSize: 2, display: 'block' }}>Open Planner</Text>
+          </Box>
+        </Button>
 
-        <button
+        <Box
+          as="button"
           onClick={() => window.api.window.openDisplay()}
-          className="w-full bg-gray-800 hover:bg-gray-700 active:bg-gray-900 text-white rounded-2xl px-6 py-3.5 flex items-center justify-between transition-colors"
+          sx={{
+            width: '100%',
+            bg: 'neutral.emphasisPlus',
+            color: 'fg.onEmphasis',
+            border: 'none',
+            borderRadius: 3,
+            px: 4,
+            py: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            '&:hover': { opacity: 0.9 },
+          }}
         >
-          <div className="text-left">
-            <p className="font-semibold text-sm">Open Display Board</p>
-            <p className="text-gray-400 text-xs mt-0.5">Live run overview in a new window</p>
-          </div>
-          <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center">
-            <Monitor className="w-4.5 h-4.5" />
-          </div>
-        </button>
+          <Box sx={{ textAlign: 'left' }}>
+            <Text sx={{ fontWeight: 'semibold', fontSize: 1, display: 'block', color: 'fg.onEmphasis' }}>Open Display Board</Text>
+            <Text sx={{ fontSize: 0, display: 'block', color: 'fg.onEmphasis', opacity: 0.7, mt: 1 }}>Live run overview in a new window</Text>
+          </Box>
+          <Box sx={{ width: 36, height: 36, bg: 'rgba(255,255,255,0.1)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Monitor size={18} />
+          </Box>
+        </Box>
 
-        <button
+        <Box
+          as="button"
           onClick={() => navigate('/incidents')}
-          className="w-full bg-white hover:bg-gray-50 active:bg-gray-100 border border-gray-200 rounded-2xl px-6 py-3.5 flex items-center justify-between transition-colors"
+          sx={{
+            width: '100%',
+            bg: 'canvas.subtle',
+            color: 'fg.default',
+            border: '1px solid',
+            borderColor: 'border.default',
+            borderRadius: 3,
+            px: 4,
+            py: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            '&:hover': { bg: 'canvas.inset' },
+          }}
         >
-          <div className="text-left">
-            <p className="font-semibold text-sm text-gray-800">Incidents</p>
-            <p className="text-gray-400 text-xs mt-0.5">Report and manage operational issues</p>
-          </div>
-          <div className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center">
-            <AlertTriangle className="w-4 h-4 text-gray-500" />
-          </div>
-        </button>
-      </div>
+          <Box sx={{ textAlign: 'left' }}>
+            <Text sx={{ fontWeight: 'semibold', fontSize: 1, display: 'block' }}>Incidents</Text>
+            <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mt: 1 }}>Report and manage operational issues</Text>
+          </Box>
+          <Box sx={{ width: 36, height: 36, bg: 'canvas.inset', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AlertTriangle size={16} />
+          </Box>
+        </Box>
+      </Box>
 
-    </div>
+    </Box>
   )
 }
 

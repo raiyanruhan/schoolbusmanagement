@@ -7,12 +7,14 @@ interface UiState {
   modalData: unknown
   toast: { message: string; type: 'success' | 'error' | 'info' } | null
   sidebarCollapsed: boolean
+  colorMode: 'day' | 'night'
 
   openModal: (type: ModalType, data?: unknown) => void
   closeModal: () => void
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void
   clearToast: () => void
   toggleSidebar: () => void
+  setColorMode: (mode: 'day' | 'night') => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -20,6 +22,7 @@ export const useUiStore = create<UiState>((set) => ({
   modalData: null,
   toast: null,
   sidebarCollapsed: false,
+  colorMode: 'day',
 
   openModal: (type, data = null) => set({ modal: type, modalData: data }),
   closeModal: () => set({ modal: null, modalData: null }),
@@ -31,5 +34,7 @@ export const useUiStore = create<UiState>((set) => ({
 
   clearToast: () => set({ toast: null }),
 
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }))
+  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+
+  setColorMode: (mode) => set({ colorMode: mode }),
 }))

@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { Bus, MapPin, Clock } from 'lucide-react'
+import { Box, Text } from '@primer/react'
 import TopBar from '../components/ui/TopBar'
 import BusManagement from '../components/settings/BusManagement'
 import RouteManagement from '../components/settings/RouteManagement'
@@ -19,36 +20,61 @@ export default function Settings() {
   const ActiveComponent = active.component
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <Box sx={{ minHeight: '100vh', bg: 'canvas.default', display: 'flex', flexDirection: 'column' }}>
       <TopBar showBack backTo="/" backLabel="Home" title="Settings" />
 
-      <div className="flex flex-1 overflow-hidden px-6 pb-6 gap-5">
-
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden', px: 4, pb: 4, gap: 4 }}>
         {/* Sidebar nav */}
-        <aside className="w-44 shrink-0 pt-2">
-          <nav className="space-y-1">
+        <Box as="aside" sx={{ width: 160, flexShrink: 0, pt: 2 }}>
+          <Box as="nav" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {TABS.map(({ id, label, icon: Icon }) => (
-              <button
+              <Box
                 key={id}
+                as="button"
                 onClick={() => navigate(`/settings/${id}`)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
-                  ${active.id === id
-                    ? 'bg-white text-brand-700 shadow-sm border border-gray-100'
-                    : 'text-gray-500 hover:text-gray-800 hover:bg-white/60'}`}
+                sx={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  px: 3,
+                  py: 2,
+                  fontSize: 1,
+                  fontWeight: 'medium',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  bg: active.id === id ? 'canvas.subtle' : 'transparent',
+                  color: active.id === id ? '' : 'fg.muted',
+                  borderLeft: '2px solid',
+                  borderColor: active.id === id ? 'accent.emphasis' : 'transparent',
+                  '&:hover': {
+                    bg: 'canvas.subtle',
+                  },
+                }}
               >
-                <Icon className="w-4 h-4 shrink-0" />
-                {label}
-              </button>
+                <Icon size={16} style={{ flexShrink: 0 }} />
+                <Text sx={{ fontSize: 1 }}>{label}</Text>
+              </Box>
             ))}
-          </nav>
-        </aside>
+          </Box>
+        </Box>
 
         {/* Content */}
-        <main className="flex-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <Box
+          as="main"
+          sx={{
+            flex: 1,
+            bg: 'canvas.default',
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'border.default',
+            overflow: 'hidden',
+          }}
+        >
           <ActiveComponent />
-        </main>
-
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   )
 }
