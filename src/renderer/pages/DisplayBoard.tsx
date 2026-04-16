@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { RunWithDetails, Shift } from '../../shared/types'
 import { Bus as BusIcon, RefreshCw, AlertCircle } from 'lucide-react'
-import { Box, Text, Button, Spinner } from '@primer/react'
+import { Text, Button, Spinner } from '@primer/react'
 
 const REFRESH_INTERVAL = 30_000
 
@@ -119,28 +119,28 @@ export default function DisplayBoard() {
 
   // DisplayBoard is always dark — use hardcoded dark colors since this is a kiosk view
   return (
-    <Box style={{ height: '100vh', background: '#0d1117', color: '#e6edf3', display: 'flex', flexDirection: 'column' }}>
-      <Box style={{ flex: 1, overflow: 'auto' }}>
+    <div style={{ height: '100vh', background: '#0d1117', color: '#e6edf3', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, overflow: 'auto' }}>
         {error ? (
-          <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8 }}>
             <AlertCircle size={40} style={{ color: '#f85149' }} />
             <Text style={{ fontSize: 14, fontWeight: 600, color: '#f85149' }}>Failed to load</Text>
             <Text style={{ fontSize: 12, color: '#8b949e', maxWidth: 384, textAlign: 'center' }}>{error}</Text>
             <Button onClick={load} style={{ marginTop: 8, background: '#21262d', border: '1px solid #30363d', color: '#c9d1d9', borderRadius: 6, padding: '6px 16px', cursor: 'pointer', fontSize: 12 }}>
               Retry
             </Button>
-          </Box>
+          </div>
         ) : loading && details.length === 0 ? (
-          <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#8b949e' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#8b949e' }}>
             <Spinner size="medium" />
             <Text style={{ fontSize: 14 }}>Loading...</Text>
-          </Box>
+          </div>
         ) : rows.length === 0 ? (
-          <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#8b949e' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#8b949e' }}>
             <BusIcon size={48} />
             <Text style={{ fontSize: 16, fontWeight: 500, color: '#c9d1d9' }}>The ones that love us, never really leave us.</Text>
             <Text style={{ fontSize: 12, color: '#6e7681' }}>— Sirius Black</Text>
-          </Box>
+          </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -177,7 +177,7 @@ export default function DisplayBoard() {
             </tbody>
           </table>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bus, MapPin, Users, Activity, ArrowRight, Settings, Monitor, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
-import { Box, Button, Heading, Text, Flash, IconButton } from '@primer/react'
+import { Button, Heading, Text, Flash, IconButton } from '@primer/react'
 import { useSessionStore } from '../store/sessionStore'
 import type { SystemHealth } from '../../shared/types'
 
@@ -30,33 +30,25 @@ export default function Dashboard() {
   })
 
   return (
-    <Box sx={{ minHeight: '100vh', bg: 'canvas.default', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bgColor-default)', display: 'flex', flexDirection: 'column' }}>
 
       {/* Top bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 5, pt: 4, pb: 2 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 32px 8px' }}>
         <Text sx={{ fontWeight: 'semibold', color: 'fg.default', fontSize: 1 }}>School Bus Manager</Text>
-        <IconButton
-          icon={Settings}
-          aria-label="Settings"
-          variant="invisible"
-          onClick={() => navigate('/settings')}
-          sx={{ color: 'fg.muted' }}
-        />
-      </Box>
+        <IconButton icon={Settings} aria-label="Settings" variant="invisible"
+          onClick={() => navigate('/settings')} sx={{ color: 'fg.muted' }} />
+      </div>
 
       {/* System health alert */}
       {health && health.level !== 'GREEN' && (
-        <Box sx={{ mx: 5, mt: 2 }}>
-          <Flash
-            variant={health.level === 'RED' ? 'danger' : 'warning'}
+        <div style={{ margin: '8px 32px 0' }}>
+          <Flash variant={health.level === 'RED' ? 'danger' : 'warning'}
             sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}
-            onClick={() => navigate('/incidents')}
-          >
+            onClick={() => navigate('/incidents')}>
             {health.level === 'RED'
               ? <AlertCircle size={16} style={{ flexShrink: 0 }} />
-              : <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-            }
-            <Box sx={{ flex: 1 }}>
+              : <AlertTriangle size={16} style={{ flexShrink: 0 }} />}
+            <div style={{ flex: 1 }}>
               <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block' }}>
                 {health.level === 'RED' ? 'Critical issues require attention' : 'Active incidents'}
               </Text>
@@ -64,124 +56,93 @@ export default function Dashboard() {
                 {health.openIncidents} open incident{health.openIncidents !== 1 ? 's' : ''}
                 {health.activeConflicts > 0 && ` · ${health.activeConflicts} conflict${health.activeConflicts !== 1 ? 's' : ''}`}
               </Text>
-            </Box>
+            </div>
             <ArrowRight size={14} style={{ flexShrink: 0 }} />
           </Flash>
-        </Box>
+        </div>
       )}
       {health && health.level === 'GREEN' && (
-        <Box sx={{ mx: 5, mt: 2 }}>
+        <div style={{ margin: '8px 32px 0' }}>
           <Flash variant="success" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <CheckCircle size={14} />
             <Text sx={{ fontSize: 0, fontWeight: 'medium' }}>All systems operational</Text>
           </Flash>
-        </Box>
+        </div>
       )}
 
       {/* Hero */}
-      <Box sx={{ px: 5, pt: 5, pb: 4 }}>
+      <div style={{ padding: '32px 32px 24px' }}>
         <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mb: 1 }}>{today}</Text>
         <Heading as="h1" sx={{ fontSize: 5, fontWeight: 'bold', color: 'fg.default', lineHeight: 1.2 }}>
           Good {getGreeting()}, {user}!
         </Heading>
-      </Box>
+      </div>
 
       {/* Stat cards */}
-      <Box sx={{ px: 5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mb: 4 }}>
+      <div style={{ padding: '0 32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
         {[
           { icon: Bus,      label: 'Buses',    value: stats?.totalBuses ?? '—',    sub: `${stats?.activeBuses ?? 0} active` },
           { icon: MapPin,   label: 'Routes',   value: stats?.totalRoutes ?? '—',   sub: 'active routes' },
           { icon: Users,    label: 'Students', value: stats?.totalStudents ?? '—', sub: 'planned today' },
           { icon: Activity, label: 'Runs',     value: stats?.runsToday ?? '—',     sub: "today's runs" },
-        ].map(({ icon: Icon, label, value, sub }) => (
-          <Box
-            key={label}
-            sx={{
-              bg: 'canvas.subtle',
-              borderRadius: 3,
-              p: 4,
-              border: '1px solid',
-              borderColor: 'border.default',
-            }}
-          >
-            <Box sx={{ color: 'accent.fg', mb: 2 }}>
-            </Box>
+        ].map(({ label, value, sub }) => (
+          <div key={label} style={{
+            background: 'var(--bgColor-muted)', borderRadius: 8,
+            padding: 24, border: '1px solid var(--borderColor-default)',
+          }}>
             <Text as="p" sx={{ fontSize: 5, fontWeight: 'bold', color: 'fg.default', m: 0 }}>{value}</Text>
             <Text as="p" sx={{ fontSize: 0, color: 'fg.muted', mt: 1, m: 0 }}>{sub}</Text>
-          </Box>
+          </div>
         ))}
-      </Box>
+      </div>
 
       {/* Primary actions */}
-      <Box sx={{ px: 5, mt: 'auto', pb: 5, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Button
-          variant="primary"
-          size="large"
-          onClick={() => navigate('/planner')}
-          sx={{ width: '100%', justifyContent: 'space-between', py: 3, borderRadius: 3 }}
-        >
-          <Box sx={{ textAlign: 'left' }}>
+      <div style={{ padding: '0 32px 32px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Button variant="primary" size="large" onClick={() => navigate('/planner')}
+          sx={{ width: '100%', justifyContent: 'space-between', py: 3, borderRadius: 3 }}>
+          <div style={{ textAlign: 'left' }}>
             <Text sx={{ fontWeight: 'semibold', fontSize: 2, display: 'block' }}>Open Planner</Text>
-          </Box>
+          </div>
         </Button>
 
-        <Box
-          as="button"
+        <button
           onClick={() => window.api.window.openDisplay()}
-          sx={{
-            width: '100%',
-            bg: 'neutral.emphasisPlus',
-            color: 'fg.onEmphasis',
-            border: 'none',
-            borderRadius: 3,
-            px: 4,
-            py: 3,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            '&:hover': { opacity: 0.9 },
+          style={{
+            width: '100%', background: 'var(--bgColor-emphasis)', color: 'var(--fgColor-onEmphasis)',
+            border: 'none', borderRadius: 8, padding: '12px 16px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer',
           }}
         >
-          <Box sx={{ textAlign: 'left' }}>
-            <Text sx={{ fontWeight: 'semibold', fontSize: 1, display: 'block', color: 'fg.onEmphasis' }}>Open Display Board</Text>
-            <Text sx={{ fontSize: 0, display: 'block', color: 'fg.onEmphasis', opacity: 0.7, mt: 1 }}>Live run overview in a new window</Text>
-          </Box>
-          <Box sx={{ width: 36, height: 36, bg: 'rgba(255,255,255,0.1)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'left' }}>
+            <span style={{ fontWeight: 600, fontSize: 14, display: 'block' }}>Open Display Board</span>
+            <span style={{ fontSize: 12, display: 'block', opacity: 0.7, marginTop: 4 }}>Live run overview in a new window</span>
+          </div>
+          <div style={{ width: 36, height: 36, background: 'rgba(255,255,255,0.1)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Monitor size={18} />
-          </Box>
-        </Box>
+          </div>
+        </button>
 
-        <Box
-          as="button"
+        <button
           onClick={() => navigate('/incidents')}
-          sx={{
-            width: '100%',
-            bg: 'canvas.subtle',
-            color: 'fg.default',
-            border: '1px solid',
-            borderColor: 'border.default',
-            borderRadius: 3,
-            px: 4,
-            py: 3,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            '&:hover': { bg: 'canvas.inset' },
+          className="hov-bg-subtle"
+          style={{
+            width: '100%', background: 'var(--bgColor-muted)', color: 'var(--fgColor-default)',
+            border: '1px solid var(--borderColor-default)', borderRadius: 8,
+            padding: '12px 16px', display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', cursor: 'pointer',
           }}
         >
-          <Box sx={{ textAlign: 'left' }}>
-            <Text sx={{ fontWeight: 'semibold', fontSize: 1, display: 'block' }}>Incidents</Text>
-            <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mt: 1 }}>Report and manage operational issues</Text>
-          </Box>
-          <Box sx={{ width: 36, height: 36, bg: 'canvas.inset', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'left' }}>
+            <span style={{ fontWeight: 600, fontSize: 14, display: 'block' }}>Incidents</span>
+            <span style={{ fontSize: 12, color: 'var(--fgColor-muted)', display: 'block', marginTop: 4 }}>Report and manage operational issues</span>
+          </div>
+          <div style={{ width: 36, height: 36, background: 'var(--bgColor-inset)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <AlertTriangle size={16} />
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </button>
+      </div>
 
-    </Box>
+    </div>
   )
 }
 

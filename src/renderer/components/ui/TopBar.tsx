@@ -1,59 +1,98 @@
-import { useNavigate } from 'react-router-dom'
-import { Settings, ArrowLeft } from 'lucide-react'
-import { Box, Button, Heading, IconButton } from '@primer/react'
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Slash } from 'lucide-react';
+import { Button, IconButton } from '@primer/react';
 
 interface TopBarProps {
-  showBack?: boolean
-  backTo?: string
-  backLabel?: string
-  title?: string
-  right?: React.ReactNode
+  showBack?: boolean;
+  backTo?: string;
+  backLabel?: string;
+  title?: string;
+  subtitle?: string;        // Added for better hierarchy
+  right?: React.ReactNode;
+  showSettings?: boolean;
+  onSettingsClick?: () => void;
 }
 
-export default function TopBar({ showBack, backTo = '/', backLabel = 'Back', title, right }: TopBarProps) {
-  const navigate = useNavigate()
+export default function TopBar({
+  showBack = false,
+  backTo = '/',
+  backLabel = 'Back',
+  title,
+}: TopBarProps) {
+  const navigate = useNavigate();
 
   return (
-    <Box
-      sx={{
+    <header
+      style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        px: 4,
-        py: 3,
-        borderBottom: '1px solid',
-        borderColor: 'border.default',
-        bg: 'canvas.default',
+        height: '52px',                    // Fixed height for density
+        padding: '0 20px',
+        borderBottom: '1px solid var(--borderColor-default)',
+        background: 'var(--bgColor-default)',
+        flexShrink: 0,
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+      {/* Left Section */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '12px',
+        minWidth: 0,           // Allows truncation
+      }}>
         {showBack && (
           <Button
             variant="invisible"
             size="small"
             leadingVisual={ArrowLeft}
             onClick={() => navigate(backTo)}
-            sx={{ color: 'fg.muted' }}
+            sx={{
+              color: 'fg.muted',
+              padding: '4px 8px',
+              fontSize: '16px',
+              fontWeight: 400,
+              minHeight: 'auto',
+              '&:hover': { backgroundColor: 'var(--bgColor-muted)' }
+            }}
           >
             {backLabel}
           </Button>
         )}
-        {title && (
-          <Heading as="h1" sx={{ fontSize: 2, fontWeight: 'semibold', color: 'fg.default' }}>
+                          <Button
+            variant="invisible"
+            size="small"
+            leadingVisual={Slash}
+            sx={{
+              color: 'fg.muted',
+              padding: '4px 8px',
+              fontSize: '16px',
+              fontWeight: 400,
+              minHeight: 'auto',
+              '&:hover': { backgroundColor: 'transparent' },
+              cursor: 'default'
+            }}
+          >
+          </Button>
+                  <Button
+            variant="invisible"
+            size="small"
+            sx={{
+              color: 'fg.muted',
+              padding: '4px 8px',
+              fontSize: '16px',
+              fontWeight: 400,
+              minHeight: 'auto',
+              cursor: 'default',
+              '&:hover': { backgroundColor: 'transparent' }
+            }}
+          >
             {title}
-          </Heading>
-        )}
-      </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        {right}
-        <IconButton
-          icon={Settings}
-          aria-label="Settings"
-          variant="invisible"
-          onClick={() => navigate('/settings')}
-          sx={{ color: 'fg.muted' }}
-        />
-      </Box>
-    </Box>
-  )
+          </Button>
+      </div>
+    </header>
+  );
 }

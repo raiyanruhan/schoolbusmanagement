@@ -1,5 +1,5 @@
 import { CheckCircle, XCircle, Info, X } from 'lucide-react'
-import { Box, Flash } from '@primer/react'
+import { Flash } from '@primer/react'
 import { useUiStore } from '../../store/uiStore'
 
 const variantMap = {
@@ -21,28 +21,18 @@ export default function Toast() {
   const Icon = IconMap[toast.type]
 
   return (
-    <Box sx={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, minWidth: 300, maxWidth: 400 }}>
+    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, minWidth: 300, maxWidth: 400 }}>
       <Flash variant={variantMap[toast.type]} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <Icon size={16} />
-        <Box sx={{ flex: 1, fontSize: 1 }}>{toast.message}</Box>
-        <Box
-          as="button"
+        <span style={{ flex: 1, fontSize: 14 }}>{toast.message}</span>
+        <button
           onClick={clearToast}
-          sx={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'inherit',
-            display: 'flex',
-            alignItems: 'center',
-            p: 0,
-            opacity: 0.7,
-            '&:hover': { opacity: 1 },
-          }}
+          className="hov-opacity-full"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', alignItems: 'center', padding: 0 }}
         >
           <X size={14} />
-        </Box>
+        </button>
       </Flash>
-    </Box>
+    </div>
   )
 }

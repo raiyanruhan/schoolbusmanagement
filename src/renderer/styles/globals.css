@@ -28,6 +28,72 @@ html, body, #root {
   background: var(--borderColor-emphasis, #818b98);
 }
 
+textarea {
+  resize: none;
+}
+
+/* ─── CSS utility classes for hover / last-child effects ─────────────────────
+   These replace Primer Box sx pseudo-selector props (&:hover, &:last-child).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Hover background */
+.hov-bg-subtle:hover  { background: var(--bgColor-muted) !important; }
+.hov-color-default:hover { color: var(--fgColor-default) !important; }
+
+/* Table / list last row: no bottom border */
+.last-no-border:last-child { border-bottom: none !important; }
+
+/* Group-hover reveal (e.g. action buttons on stop rows) */
+.group-row .group-visible { opacity: 0; transition: opacity 0.15s; }
+.group-row:hover .group-visible { opacity: 1; }
+
+/* Toast close button */
+.hov-opacity-full { opacity: 0.7; transition: opacity 0.15s; }
+.hov-opacity-full:hover { opacity: 1 !important; }
+
+/* ─── Button optical padding (icon-side compensation) ────────────────────────
+   Primer uses symmetric horizontal padding, but a leadingVisual adds an icon +
+   gap before the text, making the left side look inflated.
+   Formula: P_icon = P_text − gap  →  total perceived space is equal on both sides.
+
+   Medium (default) : P_text = 12px (--control-medium-paddingInline-normal)
+                      gap    =  8px (--base-size-8)
+                      P_icon =  4px
+   Small            : P_text =  8px (--control-small-paddingInline-condensed)
+                      gap    =  4px (--control-small-gap)
+                      P_icon =  4px
+   Large            : P_text = 16px (--control-large-paddingInline-spacious)
+                      gap    =  8px (--control-large-gap)
+                      P_icon =  8px
+
+   Selectors use Primer's own stable data-attributes and CSS custom properties
+   so the values stay correct if the design tokens are ever overridden.
+   .prc-Button-IconButton-szpyj is excluded — icon-only buttons have no text.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Medium (default — no data-size attribute) */
+.prc-Button-ButtonBase-c50BI:not(.prc-Button-IconButton-szpyj):not([data-size=small]):not([data-size=large]):has([data-component=leadingVisual]) {
+  padding-left: calc(var(--control-medium-paddingInline-normal, .75rem) - var(--base-size-8, .5rem));
+}
+
+/* Small */
+.prc-Button-ButtonBase-c50BI:not(.prc-Button-IconButton-szpyj)[data-size=small]:has([data-component=leadingVisual]) {
+  padding-left: calc(var(--control-small-paddingInline-condensed, .5rem) - var(--control-small-gap, .25rem));
+}
+
+/* Large */
+.prc-Button-ButtonBase-c50BI:not(.prc-Button-IconButton-szpyj)[data-size=large]:has([data-component=leadingVisual]) {
+  padding-left: calc(var(--control-large-paddingInline-spacious, 1rem) - var(--control-large-gap, .5rem));
+}
+
+/* Icon size: constrain all button icon SVGs to 16px */
+[data-component="leadingVisual"] svg,
+[data-component="trailingVisual"] svg,
+.prc-Button-IconButton-szpyj svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
 /* ─── School Green Theme (light) ─────────────────────────────────────────────
    Overrides Primer's GitHub-blue accent with BCPSC emerald green.
    Applied after @primer/primitives/light.css so these win the cascade.

@@ -22,7 +22,6 @@ import {
   AlertTriangle,
   Trash2,
   ChevronRight,
-  RefreshCw,
   ArrowRight,
   ArrowLeft,
   Zap,
@@ -33,14 +32,11 @@ import {
   Info,
 } from "lucide-react";
 import {
-  Box,
   ActionMenu,
   ActionList,
   Button,
   Text,
   Heading,
-  Select,
-  FormControl,
   Label,
   Spinner,
   Flash,
@@ -52,9 +48,9 @@ import TopBar from "../components/ui/TopBar";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function busStatusBorderColor(status: string): string {
-  if (status === "ACTIVE") return "success.emphasis";
-  if (status === "MAINTENANCE") return "attention.emphasis";
-  return "border.default";
+  if (status === "ACTIVE") return "var(--borderColor-success-emphasis)";
+  if (status === "MAINTENANCE") return "var(--borderColor-attention-emphasis)";
+  return "var(--borderColor-default)";
 }
 
 // ─── Run Card ─────────────────────────────────────────────────────────────────
@@ -83,44 +79,39 @@ function RunCard({
   const hasCritical = runConflicts.some((c) => c.severity === "CRITICAL");
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         display: "flex",
         alignItems: "center",
-        gap: 3,
-        p: 3,
-        border: "1px solid",
-        borderColor: hasCritical
-          ? "danger.emphasis"
+        gap: 12,
+        padding: 16,
+        border: `1px solid ${hasCritical ? "var(--borderColor-danger-emphasis)" : runConflicts.length > 0 ? "var(--borderColor-attention-emphasis)" : "var(--borderColor-default)"}`,
+        borderRadius: 6,
+        background: hasCritical
+          ? "var(--bgColor-danger-muted)"
           : runConflicts.length > 0
-            ? "attention.emphasis"
-            : "border.default",
-        borderRadius: 2,
-        bg: hasCritical
-          ? "danger.subtle"
-          : runConflicts.length > 0
-            ? "attention.subtle"
-            : "canvas.subtle",
+            ? "var(--bgColor-attention-muted)"
+            : "var(--bgColor-muted)",
       }}
     >
-      <Box
-        sx={{
+      <div
+        style={{
           width: 40,
           height: 40,
-          borderRadius: 2,
+          borderRadius: 6,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          bg: hasCritical ? "danger.subtle" : "accent.subtle",
-          color: hasCritical ? "danger.fg" : "accent.fg",
+          background: hasCritical ? "var(--bgColor-danger-muted)" : "var(--bgColor-accent-muted)",
+          color: hasCritical ? "var(--fgColor-danger)" : "var(--fgColor-accent)",
         }}
       >
         <BusIcon size={20} />
-      </Box>
+      </div>
 
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Text sx={{ fontWeight: "semibold", fontSize: 1 }}>
             {bus?.number ?? "—"}
           </Text>
@@ -144,8 +135,8 @@ function RunCard({
               ⚠ {hasCritical ? "Conflict" : "Warning"}
             </Label>
           )}
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1 }}>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
           <Text sx={{ fontSize: 0, color: "fg.muted" }}>
             {shift?.name ?? "—"}
           </Text>
@@ -154,8 +145,7 @@ function RunCard({
             sx={{
               fontSize: 0,
               fontWeight: "medium",
-              color:
-                run.direction === "OUTBOUND" ? "attention.fg" : "accent.fg",
+              color: run.direction === "OUTBOUND" ? "attention.fg" : "accent.fg",
             }}
           >
             {run.direction === "OUTBOUND" ? (
@@ -170,9 +160,9 @@ function RunCard({
           </Text>
           <Text sx={{ fontSize: 0, color: "fg.muted" }}>•</Text>
           <Label variant="secondary">{run.status}</Label>
-        </Box>
+        </div>
         {runConflicts.length > 0 && (
-          <Box sx={{ mt: 1 }}>
+          <div style={{ marginTop: 4 }}>
             {runConflicts.map((c, i) => (
               <Text
                 key={i}
@@ -186,9 +176,9 @@ function RunCard({
                 {c.message}
               </Text>
             ))}
-          </Box>
+          </div>
         )}
-      </Box>
+      </div>
 
       <IconButton
         icon={Trash2}
@@ -198,7 +188,7 @@ function RunCard({
         onClick={() => onDelete(run.id)}
         sx={{ color: "danger.fg", flexShrink: 0 }}
       />
-    </Box>
+    </div>
   );
 }
 
@@ -221,15 +211,8 @@ function CapacityBar({
   const isWay = used > max;
 
   return (
-    <Box>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          mb: 1,
-        }}
-      >
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <Text
           sx={{
             fontSize: 0,
@@ -254,43 +237,42 @@ function CapacityBar({
             <AlertTriangle size={12} /> Exceeds limit
           </Text>
         )}
-      </Box>
-      <Box
-        sx={{
+      </div>
+      <div
+        style={{
           height: 8,
-          bg: "neutral.muted",
+          background: "rgba(0,0,0,0.1)",
           borderRadius: 9999,
           overflow: "hidden",
           position: "relative",
         }}
       >
-        <Box
-          sx={{
+        <div
+          style={{
             height: "100%",
             borderRadius: 9999,
-            bg: isWay
-              ? "danger.emphasis"
+            background: isWay
+              ? "var(--bgColor-danger-emphasis)"
               : isOver
-                ? "attention.emphasis"
-                : "success.emphasis",
+                ? "var(--bgColor-attention-emphasis)"
+                : "var(--bgColor-success-emphasis)",
             width: `${pct}%`,
             transition: "width 0.2s",
           }}
         />
         {overload > 0 && (
-          <Box
-            sx={{
+          <div
+            style={{
               position: "absolute",
               top: 0,
               height: "100%",
-              borderRight: "2px dashed",
-              borderColor: "fg.muted",
+              borderRight: "2px dashed var(--fgColor-muted)",
               left: `${overPct}%`,
             }}
           />
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
 
@@ -311,48 +293,47 @@ function ProposedRunCard({ pr, buses }: { pr: ProposedRun; buses: Bus[] }) {
   const isOver = pr.totalStudents > pr.capacity;
 
   return (
-    <Box
-      sx={{
-        border: "2px solid",
-        borderColor: pr.isOverloaded ? "attention.emphasis" : "border.default",
-        borderRadius: 2,
+    <div
+      style={{
+        border: `2px solid ${pr.isOverloaded ? "var(--borderColor-attention-emphasis)" : "var(--borderColor-default)"}`,
+        borderRadius: 6,
         overflow: "hidden",
       }}
     >
-      <Box sx={{ p: 3 }}>
-        <Box
-          sx={{
+      <div style={{ padding: 16 }}>
+        <div
+          style={{
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
-            gap: 2,
-            mb: 3,
+            gap: 8,
+            marginBottom: 16,
           }}
         >
-          <Box>
+          <div>
             <Text sx={{ fontWeight: "bold", fontSize: 2 }}>
               {bus?.number ?? pr.bus_number}
             </Text>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
-              <Box
-                sx={{
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+              <div
+                style={{
                   width: 8,
                   height: 8,
                   borderRadius: "50%",
-                  bg: pr.route_color,
+                  background: pr.route_color,
                 }}
               />
               <Text sx={{ fontSize: 0, color: "fg.muted" }}>
                 {pr.route_name}
               </Text>
-            </Box>
-          </Box>
-          <Box
-            sx={{
+            </div>
+          </div>
+          <div
+            style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "flex-end",
-              gap: 1,
+              gap: 4,
             }}
           >
             <Label variant={genderVariant[pr.gender] ?? "secondary"}>
@@ -363,11 +344,11 @@ function ProposedRunCard({ pr, buses }: { pr: ProposedRun; buses: Bus[] }) {
             >
               {pr.direction}
             </Label>
-          </Box>
-        </Box>
+          </div>
+        </div>
 
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
             <Text
               sx={{
                 fontSize: 0,
@@ -378,32 +359,32 @@ function ProposedRunCard({ pr, buses }: { pr: ProposedRun; buses: Bus[] }) {
               {pr.totalStudents} / {pr.capacity} students
               {isOver && ` (+${pr.totalStudents - pr.capacity} over)`}
             </Text>
-          </Box>
-          <Box
-            sx={{
+          </div>
+          <div
+            style={{
               height: 8,
-              bg: "neutral.muted",
+              background: "rgba(0,0,0,0.1)",
               borderRadius: 9999,
               overflow: "hidden",
             }}
           >
-            <Box
-              sx={{
+            <div
+              style={{
                 height: "100%",
                 borderRadius: 9999,
-                bg: pr.isOverloaded
-                  ? "danger.emphasis"
+                background: pr.isOverloaded
+                  ? "var(--bgColor-danger-emphasis)"
                   : isOver
-                    ? "attention.emphasis"
-                    : "success.emphasis",
+                    ? "var(--bgColor-attention-emphasis)"
+                    : "var(--bgColor-success-emphasis)",
                 width: `${pct}%`,
               }}
             />
-          </Box>
-        </Box>
+          </div>
+        </div>
 
         {pr.warnings.length > 0 && (
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 3 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 16 }}>
             {pr.warnings.map((w, i) => (
               <Label
                 key={i}
@@ -412,59 +393,57 @@ function ProposedRunCard({ pr, buses }: { pr: ProposedRun; buses: Bus[] }) {
                 {w.type.replace("_", " ")}
               </Label>
             ))}
-          </Box>
+          </div>
         )}
 
-        <Box
-          as="button"
+        <button
           onClick={() => setExpanded((e) => !e)}
-          sx={{
+          style={{
             width: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            bg: "transparent",
+            background: "transparent",
             border: "none",
             cursor: "pointer",
-            color: "fg.muted",
-            fontSize: 0,
-            p: 0,
+            color: "var(--fgColor-muted)",
+            fontSize: 12,
+            padding: 0,
           }}
         >
           <Text sx={{ fontSize: 0 }}>
             {pr.stops.length} stop{pr.stops.length !== 1 ? "s" : ""}
           </Text>
           {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </Box>
+        </button>
 
         {expanded && (
-          <Box sx={{ mt: 2 }}>
+          <div style={{ marginTop: 8 }}>
             {pr.stops.map((s, i) => (
-              <Box
+              <div
                 key={s.stop_id}
-                sx={{
+                style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  py: 1,
-                  borderTop: "1px solid",
-                  borderColor: "border.muted",
+                  padding: "4px 0",
+                  borderTop: "1px solid var(--borderColor-muted)",
                 }}
               >
-                <Box
-                  sx={{
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 2,
-                    color: "fg.muted",
+                    gap: 8,
+                    color: "var(--fgColor-muted)",
                   }}
                 >
-                  <Box
-                    sx={{
+                  <div
+                    style={{
                       width: 20,
                       height: 20,
                       borderRadius: "50%",
-                      bg: "canvas.subtle",
+                      background: "var(--bgColor-muted)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -472,9 +451,9 @@ function ProposedRunCard({ pr, buses }: { pr: ProposedRun; buses: Bus[] }) {
                     }}
                   >
                     <Text sx={{ fontSize: 0 }}>{i + 1}</Text>
-                  </Box>
+                  </div>
                   <Text sx={{ fontSize: 0 }}>{s.stop_name}</Text>
-                </Box>
+                </div>
                 <Text
                   sx={{
                     fontSize: 0,
@@ -484,12 +463,12 @@ function ProposedRunCard({ pr, buses }: { pr: ProposedRun; buses: Bus[] }) {
                 >
                   {s.student_count}
                 </Text>
-              </Box>
+              </div>
             ))}
-          </Box>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
 
@@ -567,26 +546,24 @@ function AutoPlanTab({
     plan?.warnings.filter((w) => w.severity === "WARNING") ?? [];
 
   return (
-    <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+    <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
       {/* LEFT: Config */}
-      <Box
-        sx={{
+      <div
+        style={{
           width: 288,
-          borderRight: "1px solid",
-          borderColor: "border.default",
-          bg: "canvas.default",
+          borderRight: "1px solid var(--borderColor-default)",
+          background: "var(--bgColor-default)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
         }}
       >
-        <Box sx={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ flex: 1, overflowY: "auto" }}>
           {/* Shift */}
-          <Box
-            sx={{
-              p: 3,
-              borderBottom: "1px solid",
-              borderColor: "border.muted",
+          <div
+            style={{
+              padding: 16,
+              borderBottom: "1px solid var(--borderColor-muted)",
             }}
           >
             <Text
@@ -601,47 +578,43 @@ function AutoPlanTab({
             >
               Shift
             </Text>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {activeShifts.map((s) => (
-                <Box
+                <button
                   key={s.id}
-                  as="button"
                   onClick={() => {
                     setSelectedShiftId(s.id);
                     setPlan(null);
                   }}
-                  sx={{
+                  className="hov-bg-subtle"
+                  style={{
                     textAlign: "left",
-                    px: 3,
-                    py: 2,
-                    borderRadius: 2,
-                    fontSize: 1,
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    fontSize: 14,
                     border: "none",
                     cursor: "pointer",
-                    bg: selectedShiftId === s.id ? "" : "transparent",
-                    color: selectedShiftId === s.id ? "" : "fg.default",
-                    fontWeight:
-                      selectedShiftId === s.id ? "semibold" : "normal",
-                    "&:hover": { bg: "actionListItem.default.hoverBg" },
+                    background: selectedShiftId === s.id ? "var(--bgColor-accent-muted)" : "transparent",
+                    color: selectedShiftId === s.id ? "var(--fgColor-accent)" : "var(--fgColor-default)",
+                    fontWeight: selectedShiftId === s.id ? 600 : 400,
                   }}
                 >
                   {s.name}
-                </Box>
+                </button>
               ))}
               {activeShifts.length === 0 && (
                 <Text sx={{ fontSize: 0, color: "fg.muted" }}>
                   No active shifts
                 </Text>
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* Direction */}
-          <Box
-            sx={{
-              p: 3,
-              borderBottom: "1px solid",
-              borderColor: "border.muted",
+          <div
+            style={{
+              padding: 16,
+              borderBottom: "1px solid var(--borderColor-muted)",
             }}
           >
             <Text
@@ -656,7 +629,7 @@ function AutoPlanTab({
             >
               Direction
             </Text>
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <div style={{ display: "flex", gap: 8 }}>
               <Button
                 size="small"
                 variant={direction === "OUTBOUND" ? "primary" : "default"}
@@ -664,7 +637,7 @@ function AutoPlanTab({
                   setDirection("OUTBOUND");
                   setPlan(null);
                 }}
-                sx={{ flex: 1 }}
+                style={{ flex: 1 }}
               >
                 Outbound
               </Button>
@@ -675,19 +648,18 @@ function AutoPlanTab({
                   setDirection("INBOUND");
                   setPlan(null);
                 }}
-                sx={{ flex: 1 }}
+                style={{ flex: 1 }}
               >
                 Inbound
               </Button>
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* Strategy */}
-          <Box
-            sx={{
-              p: 3,
-              borderBottom: "1px solid",
-              borderColor: "border.muted",
+          <div
+            style={{
+              padding: 16,
+              borderBottom: "1px solid var(--borderColor-muted)",
             }}
           >
             <Text
@@ -748,10 +720,10 @@ function AutoPlanTab({
                 "Fill buses with lowest-student routes first"}
               {strategy === "SEQUENCE_ORDER" && "Assign buses in route order"}
             </Text>
-          </Box>
+          </div>
 
           {/* Info */}
-          <Box sx={{ p: 3 }}>
+          <div style={{ padding: 16 }}>
             <Flash
               sx={{
                 display: "flex",
@@ -766,11 +738,11 @@ function AutoPlanTab({
                 limits and overload are applied automatically.
               </span>
             </Flash>
-          </Box>
-        </Box>
+          </div>
+        </div>
 
-        <Box
-          sx={{ p: 3, borderTop: "1px solid", borderColor: "border.default" }}
+        <div
+          style={{ padding: 16, borderTop: "1px solid var(--borderColor-default)" }}
         >
           <Button
             variant="primary"
@@ -780,12 +752,12 @@ function AutoPlanTab({
           >
             {generating ? "Generating..." : "Generate Plan"}
           </Button>
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       {/* CENTER: Proposed runs */}
-      <Box
-        sx={{
+      <div
+        style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
@@ -793,14 +765,14 @@ function AutoPlanTab({
         }}
       >
         {!plan ? (
-          <Box
-            sx={{
+          <div
+            style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               height: "100%",
-              color: "fg.muted",
+              color: "var(--fgColor-muted)",
             }}
           >
             {generating ? (
@@ -819,44 +791,42 @@ function AutoPlanTab({
                 </Text>
               </>
             )}
-          </Box>
+          </div>
         ) : (
           <>
             {/* Summary bar */}
-            <Box
-              sx={{
-                px: 4,
-                py: 2,
-                bg: "canvas.subtle",
-                borderBottom: "1px solid",
-                borderColor: "border.default",
+            <div
+              style={{
+                padding: "8px 24px",
+                background: "var(--bgColor-muted)",
+                borderBottom: "1px solid var(--borderColor-default)",
                 display: "flex",
                 alignItems: "center",
-                gap: 4,
+                gap: 24,
                 flexShrink: 0,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <BusIcon size={16} />
                 <Text sx={{ fontWeight: "semibold", fontSize: 1 }}>
                   {plan.summary.totalBusesUsed}
                 </Text>
                 <Text sx={{ fontSize: 1, color: "fg.muted" }}>buses</Text>
-              </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <Users size={16} />
                 <Text sx={{ fontWeight: "semibold", fontSize: 1 }}>
                   {plan.summary.totalStudentsAssigned}
                 </Text>
                 <Text sx={{ fontSize: 1, color: "fg.muted" }}>assigned</Text>
-              </Box>
+              </div>
               {plan.summary.totalStudentsUnassigned > 0 && (
-                <Box
-                  sx={{
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 1,
-                    color: "danger.fg",
+                    gap: 4,
+                    color: "var(--fgColor-danger)",
                   }}
                 >
                   <AlertTriangle size={16} />
@@ -864,15 +834,15 @@ function AutoPlanTab({
                     {plan.summary.totalStudentsUnassigned}
                   </Text>
                   <Text sx={{ fontSize: 1 }}>unassigned</Text>
-                </Box>
+                </div>
               )}
               {plan.summary.overloadedRuns > 0 && (
-                <Box
-                  sx={{
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 1,
-                    color: "attention.fg",
+                    gap: 4,
+                    color: "var(--fgColor-attention)",
                   }}
                 >
                   <AlertCircle size={16} />
@@ -880,21 +850,21 @@ function AutoPlanTab({
                     {plan.summary.overloadedRuns}
                   </Text>
                   <Text sx={{ fontSize: 1 }}>overloaded</Text>
-                </Box>
+                </div>
               )}
-            </Box>
+            </div>
 
             {/* Proposed run cards */}
-            <Box sx={{ flex: 1, overflowY: "auto", p: 3 }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
               {plan.proposedRuns.length === 0 ? (
-                <Box
-                  sx={{
+                <div
+                  style={{
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
                     height: "100%",
-                    color: "fg.muted",
+                    color: "var(--fgColor-muted)",
                   }}
                 >
                   <BusIcon
@@ -902,18 +872,18 @@ function AutoPlanTab({
                     style={{ marginBottom: 8, opacity: 0.3 }}
                   />
                   <Text sx={{ fontSize: 1 }}>No runs could be generated</Text>
-                </Box>
+                </div>
               ) : (
-                <Box
-                  sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 3 }}
+                <div
+                  style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}
                 >
                   {plan.proposedRuns.map((pr) => (
                     <ProposedRunCard key={pr.temp_id} pr={pr} buses={buses} />
                   ))}
-                </Box>
+                </div>
               )}
               {plan.unassignedStops.length > 0 && (
-                <Box sx={{ mt: 4 }}>
+                <div style={{ marginTop: 24 }}>
                   <Text
                     as="h4"
                     sx={{
@@ -929,28 +899,27 @@ function AutoPlanTab({
                     <AlertTriangle size={16} /> Unassigned Stops (
                     {plan.unassignedStops.length})
                   </Text>
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
                   >
                     {plan.unassignedStops.map((us) => (
-                      <Box
+                      <div
                         key={us.stop_id}
-                        sx={{
-                          bg: "danger.subtle",
-                          border: "1px solid",
-                          borderColor: "danger.muted",
-                          borderRadius: 2,
-                          p: 3,
+                        style={{
+                          background: "var(--bgColor-danger-muted)",
+                          border: "1px solid var(--borderColor-danger-muted)",
+                          borderRadius: 6,
+                          padding: 16,
                         }}
                       >
-                        <Box
-                          sx={{
+                        <div
+                          style={{
                             display: "flex",
                             justifyContent: "space-between",
-                            gap: 2,
+                            gap: 8,
                           }}
                         >
-                          <Box>
+                          <div>
                             <Text
                               sx={{
                                 fontWeight: "semibold",
@@ -970,7 +939,7 @@ function AutoPlanTab({
                             >
                               {us.route_name}
                             </Text>
-                          </Box>
+                          </div>
                           <Text
                             sx={{
                               fontSize: 0,
@@ -980,7 +949,7 @@ function AutoPlanTab({
                           >
                             {us.planned_boys + us.planned_girls} students
                           </Text>
-                        </Box>
+                        </div>
                         <Text
                           sx={{
                             fontSize: 0,
@@ -992,53 +961,51 @@ function AutoPlanTab({
                         >
                           {us.reason}
                         </Text>
-                      </Box>
+                      </div>
                     ))}
-                  </Box>
-                </Box>
+                  </div>
+                </div>
               )}
-            </Box>
+            </div>
           </>
         )}
-      </Box>
+      </div>
 
       {/* RIGHT: Actions + Warnings */}
-      <Box
-        sx={{
+      <div
+        style={{
           width: 288,
-          borderLeft: "1px solid",
-          borderColor: "border.default",
-          bg: "canvas.subtle",
+          borderLeft: "1px solid var(--borderColor-default)",
+          background: "var(--bgColor-muted)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
         }}
       >
-        <Box
-          sx={{
-            p: 3,
-            borderBottom: "1px solid",
-            borderColor: "border.muted",
-            bg: "canvas.default",
+        <div
+          style={{
+            padding: 16,
+            borderBottom: "1px solid var(--borderColor-muted)",
+            background: "var(--bgColor-default)",
           }}
         >
           <Heading as="h3" sx={{ fontSize: 2 }}>
             Plan Actions
           </Heading>
-        </Box>
-        <Box
-          sx={{
+        </div>
+        <div
+          style={{
             flex: 1,
             overflowY: "auto",
-            p: 3,
+            padding: 16,
             display: "flex",
             flexDirection: "column",
-            gap: 3,
+            gap: 16,
           }}
         >
           {plan ? (
             <>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <Button
                   variant="primary"
                   leadingVisual={CheckCircle2}
@@ -1055,9 +1022,9 @@ function AutoPlanTab({
                 >
                   Discard Plan
                 </Button>
-              </Box>
+              </div>
               {(criticalWarnings.length > 0 || normalWarnings.length > 0) && (
-                <Box>
+                <div>
                   <Text
                     sx={{
                       fontSize: 0,
@@ -1071,8 +1038,8 @@ function AutoPlanTab({
                   >
                     Warnings
                   </Text>
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
                   >
                     {criticalWarnings.map((w, i) => (
                       <Flash key={i} variant="danger" sx={{ fontSize: 0 }}>
@@ -1101,8 +1068,8 @@ function AutoPlanTab({
                         <Text>{w.message}</Text>
                       </Flash>
                     ))}
-                  </Box>
-                </Box>
+                  </div>
+                </div>
               )}
               {plan.warnings.length === 0 && (
                 <Flash variant="success" sx={{ fontSize: 0 }}>
@@ -1111,15 +1078,15 @@ function AutoPlanTab({
               )}
             </>
           ) : (
-            <Box sx={{ textAlign: "center", color: "fg.muted", py: 4 }}>
+            <div style={{ textAlign: "center", color: "var(--fgColor-muted)", padding: "16px 0" }}>
               <Zap size={32} style={{ marginBottom: 8, opacity: 0.3 }} />
               <Text sx={{ fontSize: 1, display: "block" }}>
                 Generate a plan to see actions
               </Text>
-            </Box>
+            </div>
           )}
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       <ConfirmDialog
         open={discardConfirm}
@@ -1133,7 +1100,7 @@ function AutoPlanTab({
         confirmLabel="Discard"
         danger
       />
-    </Box>
+    </div>
   );
 }
 
@@ -1259,37 +1226,37 @@ export default function Planner() {
 
   if (!session) {
     return (
-      <Box
-        sx={{
+      <div
+        style={{
           minHeight: "100vh",
-          bg: "canvas.default",
+          background: "var(--bgColor-default)",
           display: "flex",
           flexDirection: "column",
         }}
       >
         <TopBar showBack backTo="/" backLabel="Home" title="Planner" />
-        <Box
-          sx={{
+        <div
+          style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flex: 1,
           }}
         >
-          <Box sx={{ textAlign: "center", color: "fg.muted" }}>
+          <div style={{ textAlign: "center", color: "var(--fgColor-muted)" }}>
             <Spinner size="large" />
             <Text sx={{ display: "block", mt: 2 }}>Loading session...</Text>
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         minHeight: "100vh",
-        bg: "canvas.default",
+        background: "var(--bgColor-default)",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -1299,7 +1266,7 @@ export default function Planner() {
         showBack
         backTo="/"
         backLabel="Home"
-        title={`${session.date}`}
+        title={`Planner (${session.date})`}
         right={
           activeTab === "manual" && shiftRuns.length > 0 ? (
             <Button
@@ -1315,72 +1282,65 @@ export default function Planner() {
       />
 
       {/* Tab bar */}
-      <Box
-        sx={{
-          bg: "canvas.default",
-          borderBottom: "1px solid",
-          borderColor: "border.default",
-          px: 4,
+      <div
+        style={{
+          background: "var(--bgColor-default)",
+          borderBottom: "1px solid var(--borderColor-default)",
+          padding: "0 24px",
           display: "flex",
           alignItems: "center",
-          gap: 1,
+          gap: 4,
           flexShrink: 0,
         }}
       >
         {(["manual", "auto"] as const).map((tab) => (
-          <Box
+          <button
             key={tab}
-            as="button"
             onClick={() => setActiveTab(tab)}
-            sx={{
-              px: 3,
-              py: 2,
-              fontSize: 1,
-              fontWeight: "medium",
+            style={{
+              padding: "8px 12px",
+              fontSize: 14,
+              fontWeight: 500,
               border: "none",
-              bg: "transparent",
+              background: "transparent",
               cursor: "pointer",
-              borderBottom: "2px solid",
-              borderColor:
-                activeTab === tab ? "accent.emphasis" : "transparent",
-              color: activeTab === tab ? "accent.fg" : "fg.muted",
-              mb: "-1px",
+              borderBottom: `2px solid ${activeTab === tab ? "var(--borderColor-accent-emphasis)" : "transparent"}`,
+              color: activeTab === tab ? "var(--fgColor-accent)" : "var(--fgColor-muted)",
+              marginBottom: -1,
             }}
           >
             {tab === "manual" ? (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <MapPin size={14} /> Manual
-              </Box>
+              </span>
             ) : (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <Zap size={14} /> Auto-Plan
-              </Box>
+              </span>
             )}
-          </Box>
+          </button>
         ))}
-      </Box>
+      </div>
 
       {activeTab === "manual" ? (
-        <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
           {/* LEFT PANEL: Config */}
-          <Box
-            sx={{
+          <div
+            style={{
               width: 320,
-              borderRight: "1px solid",
-              borderColor: "border.default",
-              bg: "canvas.default",
+              borderRight: "1px solid var(--borderColor-default)",
+              background: "var(--bgColor-default)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
             }}
           >
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <div style={{ flex: 1, overflowY: "auto" }}>
               {/* Shift */}
-              <Box
-                sx={{
-                  p: 3,
-                  borderBottom: "1px solid",
-                  borderColor: "border.muted",
+              <div
+                style={{
+                  padding: 16,
+                  borderBottom: "1px solid var(--borderColor-muted)",
                 }}
               >
                 <Text
@@ -1393,46 +1353,40 @@ export default function Planner() {
                 >
                   1. Select Shift
                 </Text>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {activeShifts.map((shift) => (
-                    <Box
+                    <button
                       key={shift.id}
-                      as="button"
                       onClick={() => setSelectedShift(shift)}
-                      sx={{
+                      className="hov-bg-subtle"
+                      style={{
                         textAlign: "left",
-                        px: 3,
-                        py: 2,
-                        borderRadius: 2,
-                        fontSize: 1,
+                        padding: "8px 12px",
+                        borderRadius: 6,
+                        fontSize: 14,
                         border: "none",
                         cursor: "pointer",
-                        bg: selectedShift?.id === shift.id ? "" : "transparent",
-                        color: selectedShift?.id === shift.id ? "" : "",
-                        fontWeight:
-                          selectedShift?.id === shift.id
-                            ? "semibold"
-                            : "normal",
-                        "&:hover": { bg: "actionListItem.default.hoverBg" },
+                        background: selectedShift?.id === shift.id ? "var(--bgColor-accent-muted)" : "transparent",
+                        color: selectedShift?.id === shift.id ? "var(--fgColor-accent)" : "var(--fgColor-default)",
+                        fontWeight: selectedShift?.id === shift.id ? 600 : 400,
                       }}
                     >
                       {shift.name}
-                    </Box>
+                    </button>
                   ))}
                   {activeShifts.length === 0 && (
                     <Text sx={{ fontSize: 0, color: "fg.muted" }}>
                       No active shifts
                     </Text>
                   )}
-                </Box>
-              </Box>
+                </div>
+              </div>
 
               {/* Direction */}
-              <Box
-                sx={{
-                  p: 3,
-                  borderBottom: "1px solid",
-                  borderColor: "border.muted",
+              <div
+                style={{
+                  padding: 16,
+                  borderBottom: "1px solid var(--borderColor-muted)",
                 }}
               >
                 <Text
@@ -1445,7 +1399,7 @@ export default function Planner() {
                 >
                   2. Direction
                 </Text>
-                <Box sx={{ display: "flex", gap: 2 }}>
+                <div style={{ display: "flex", gap: 8 }}>
                   <Button
                     size="small"
                     variant={
@@ -1453,7 +1407,7 @@ export default function Planner() {
                     }
                     leadingVisual={ArrowRight}
                     onClick={() => setDirection("OUTBOUND")}
-                    sx={{ flex: 1 }}
+                    style={{ flex: 1 }}
                   >
                     Outbound
                   </Button>
@@ -1464,19 +1418,18 @@ export default function Planner() {
                     }
                     leadingVisual={ArrowLeft}
                     onClick={() => setDirection("INBOUND")}
-                    sx={{ flex: 1 }}
+                    style={{ flex: 1 }}
                   >
                     Inbound
                   </Button>
-                </Box>
-              </Box>
+                </div>
+              </div>
 
               {/* Bus selector */}
-              <Box
-                sx={{
-                  p: 3,
-                  borderBottom: "1px solid",
-                  borderColor: "border.muted",
+              <div
+                style={{
+                  padding: 16,
+                  borderBottom: "1px solid var(--borderColor-muted)",
                 }}
               >
                 <Text
@@ -1489,7 +1442,7 @@ export default function Planner() {
                 >
                   3. Select Bus
                 </Text>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {activeBuses.map((bus) => {
                     const isSelected = selectedBus?.id === bus.id;
                     const isUsed = runs.some(
@@ -1497,25 +1450,22 @@ export default function Planner() {
                         r.bus_id === bus.id && r.shift_id === selectedShift?.id,
                     );
                     return (
-                      <Box
+                      <button
                         key={bus.id}
-                        as="button"
                         onClick={() => setSelectedBus(isSelected ? null : bus)}
-                        sx={{
+                        className="hov-bg-subtle"
+                        style={{
                           textAlign: "left",
-                          borderRadius: 2,
-                          border: "2px solid",
+                          borderRadius: 6,
+                          border: `2px solid ${isSelected ? "var(--borderColor-accent-emphasis)" : busStatusBorderColor(bus.status)}`,
                           cursor: "pointer",
-                          bg: "transparent",
-                          borderColor: isSelected
-                            ? "accent.emphasis"
-                            : busStatusBorderColor(bus.status),
+                          background: "transparent",
+                          padding: "8px 12px",
                           opacity: isUsed ? 0.6 : 1,
-                          "&:hover": { bg: "actionListItem.default.hoverBg" },
                         }}
                       >
-                        <Box
-                          sx={{
+                        <div
+                          style={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
@@ -1538,8 +1488,8 @@ export default function Planner() {
                           {isUsed && !isSelected && (
                             <Label variant="attention">In use</Label>
                           )}
-                        </Box>
-                      </Box>
+                        </div>
+                      </button>
                     );
                   })}
                   {activeBuses.length === 0 && (
@@ -1547,11 +1497,11 @@ export default function Planner() {
                       No active buses
                     </Text>
                   )}
-                </Box>
-              </Box>
+                </div>
+              </div>
 
               {/* Route selector */}
-              <Box sx={{ p: 3 }}>
+              <div style={{ padding: 16 }}>
                 <Text
                   sx={{
                     fontSize: 1,
@@ -1562,11 +1512,10 @@ export default function Planner() {
                 >
                   4. Select Route
                 </Text>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {activeRoutes.map((route) => (
-                    <Box
+                    <button
                       key={route.id}
-                      as="button"
                       onClick={() =>
                         setSelectedRoute(
                           selectedRoute?.id === route.id
@@ -1574,57 +1523,47 @@ export default function Planner() {
                             : (route as RouteWithStops),
                         )
                       }
-                      sx={{
+                      className="hov-bg-subtle"
+                      style={{
                         textAlign: "left",
-                        px: 3,
-                        py: 2,
-                        borderRadius: 2,
-                        fontSize: 1,
+                        padding: "8px 12px",
+                        borderRadius: 6,
+                        fontSize: 14,
                         border: "none",
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        gap: 2,
-                        bg:
-                          selectedRoute?.id === route.id
-                            ? "accent.subtle"
-                            : "transparent",
-                        color:
-                          selectedRoute?.id === route.id
-                            ? "accent.fg"
-                            : "fg.default",
-                        fontWeight:
-                          selectedRoute?.id === route.id
-                            ? "semibold"
-                            : "normal",
-                        "&:hover": { bg: "actionListItem.default.hoverBg" },
+                        gap: 8,
+                        background: selectedRoute?.id === route.id ? "var(--bgColor-accent-muted)" : "transparent",
+                        color: selectedRoute?.id === route.id ? "var(--fgColor-accent)" : "var(--fgColor-default)",
+                        fontWeight: selectedRoute?.id === route.id ? 600 : 400,
                       }}
                     >
-                      <Box
-                        sx={{
+                      <div
+                        style={{
                           width: 10,
                           height: 10,
                           borderRadius: "50%",
                           flexShrink: 0,
-                          bg: route.color,
+                          background: route.color,
                         }}
                       />
                       {route.name}
-                    </Box>
+                    </button>
                   ))}
                   {activeRoutes.length === 0 && (
                     <Text sx={{ fontSize: 0, color: "fg.muted" }}>
                       No active routes
                     </Text>
                   )}
-                </Box>
-              </Box>
-            </Box>
-          </Box>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* CENTER PANEL: Stop selection */}
-          <Box
-            sx={{
+          <div
+            style={{
               flex: 1,
               minWidth: 0,
               display: "flex",
@@ -1632,19 +1571,18 @@ export default function Planner() {
               overflow: "hidden",
             }}
           >
-            <Box
-              sx={{
-                p: 3,
-                borderBottom: "1px solid",
-                borderColor: "border.default",
-                bg: "canvas.default",
+            <div
+              style={{
+                padding: 16,
+                borderBottom: "1px solid var(--borderColor-default)",
+                background: "var(--bgColor-default)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                gap: 2,
+                gap: 8,
               }}
             >
-              <Box sx={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0 }}>
                 <Heading as="h3" sx={{ fontSize: 2 }}>
                   {selectedRoute
                     ? `Stops — ${selectedRoute.name}`
@@ -1665,22 +1603,21 @@ export default function Planner() {
                       ` · ${selectedStudentCount} students`}
                   </Text>
                 )}
-              </Box>
-              <Box
-                sx={{
+              </div>
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 2,
+                  gap: 8,
                   flexShrink: 0,
                 }}
               >
                 {selectedShift && selectedShift.gender_mode !== "COMBINED" && (
-                  <Box
-                    sx={{
+                  <div
+                    style={{
                       display: "flex",
-                      border: "1px solid",
-                      borderColor: "border.default",
-                      borderRadius: 2,
+                      border: "1px solid var(--borderColor-default)",
+                      borderRadius: 6,
                       overflow: "hidden",
                     }}
                   >
@@ -1690,41 +1627,29 @@ export default function Planner() {
                           selectedShift.gender_mode === "AUTO" || g !== "MIXED",
                       )
                       .map((g) => (
-                        <Box
+                        <button
                           key={g}
-                          as="button"
                           onClick={() => setGender(g)}
-                          sx={{
-                            px: 2,
-                            py: 1,
-                            fontSize: 0,
-                            fontWeight: "medium",
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: 12,
+                            fontWeight: 500,
                             border: "none",
                             cursor: "pointer",
-                            bg:
-                              selectedGender === g
-                                ? g === "BOYS"
-                                  ? "accent.emphasis"
-                                  : g === "GIRLS"
-                                    ? "sponsors.emphasis"
-                                    : "done.emphasis"
-                                : "transparent",
-                            color:
-                              selectedGender === g
-                                ? "fg.onEmphasis"
-                                : "fg.muted",
-                            "&:hover": {
-                              bg:
-                                selectedGender === g
-                                  ? undefined
-                                  : "actionListItem.default.hoverBg",
-                            },
+                            background: selectedGender === g
+                              ? g === "BOYS"
+                                ? "var(--bgColor-accent-emphasis)"
+                                : g === "GIRLS"
+                                  ? "#db2777"
+                                  : "var(--bgColor-done-emphasis)"
+                              : "transparent",
+                            color: selectedGender === g ? "white" : "var(--fgColor-muted)",
                           }}
                         >
                           {g === "BOYS" ? "B" : g === "GIRLS" ? "G" : "M"}
-                        </Box>
+                        </button>
                       ))}
-                  </Box>
+                  </div>
                 )}
                 {selectedStopIds.length > 0 && (
                   <Button
@@ -1750,17 +1675,15 @@ export default function Planner() {
                 >
                   {confirming ? "Saving..." : "Confirm Run"}
                 </Button>
-              </Box>
-            </Box>
+              </div>
+            </div>
 
             {selectedBus && selectedRoute && (
-              <Box
-                sx={{
-                  px: 3,
-                  py: 2,
-                  bg: "canvas.subtle",
-                  borderBottom: "1px solid",
-                  borderColor: "border.default",
+              <div
+                style={{
+                  padding: "8px 16px",
+                  background: "var(--bgColor-muted)",
+                  borderBottom: "1px solid var(--borderColor-default)",
                 }}
               >
                 <CapacityBar
@@ -1768,26 +1691,26 @@ export default function Planner() {
                   capacity={selectedBus.capacity}
                   overload={selectedShift?.default_overload ?? 0}
                 />
-              </Box>
+              </div>
             )}
 
-            <Box sx={{ flex: 1, overflowY: "auto", p: 3 }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
               {!selectedRoute ? (
-                <Box
-                  sx={{
+                <div
+                  style={{
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
                     justifyContent: "center",
                     height: "100%",
-                    color: "fg.muted",
+                    color: "var(--fgColor-muted)",
                   }}
                 >
                   <MapPin size={40} style={{ marginBottom: 8, opacity: 0.3 }} />
                   <Text sx={{ fontSize: 1 }}>Select a route to see stops</Text>
-                </Box>
+                </div>
               ) : routeDetails ? (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {routeDetails.stops
                     .filter((s) => s.is_active)
                     .map((stop, i) => {
@@ -1799,36 +1722,27 @@ export default function Planner() {
                       const girls = cfg?.planned_girls ?? 0;
                       const total = boys + girls;
                       return (
-                        <Box
+                        <button
                           key={stop.id}
-                          as="button"
                           onClick={() => toggleStop(stop.id)}
-                          sx={{
+                          style={{
                             textAlign: "left",
-                            p: 3,
-                            borderRadius: 2,
-                            border: "2px solid",
+                            padding: 16,
+                            borderRadius: 6,
+                            border: `2px solid ${isSelected ? "var(--borderColor-accent-emphasis)" : "var(--borderColor-default)"}`,
                             cursor: "pointer",
-                            bg: isSelected ? "accent.subtle" : "canvas.default",
-                            borderColor: isSelected
-                              ? "accent.emphasis"
-                              : "border.default",
-                            "&:hover": {
-                              borderColor: isSelected
-                                ? "accent.emphasis"
-                                : "border.muted",
-                            },
+                            background: isSelected ? "var(--bgColor-accent-muted)" : "var(--bgColor-default)",
                           }}
                         >
-                          <Box
-                            sx={{
+                          <div
+                            style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: 2,
+                              gap: 8,
                             }}
                           >
-                            <Box
-                              sx={{
+                            <div
+                              style={{
                                 width: 28,
                                 height: 28,
                                 borderRadius: "50%",
@@ -1836,17 +1750,17 @@ export default function Planner() {
                                 alignItems: "center",
                                 justifyContent: "center",
                                 flexShrink: 0,
-                                bg: isSelected
-                                  ? "accent.emphasis"
-                                  : "canvas.subtle",
+                                background: isSelected
+                                  ? "var(--bgColor-accent-emphasis)"
+                                  : "var(--bgColor-muted)",
                                 color: isSelected
-                                  ? "fg.onEmphasis"
-                                  : "fg.muted",
+                                  ? "white"
+                                  : "var(--fgColor-muted)",
                               }}
                             >
                               <Text sx={{ fontSize: 0 }}>{i + 1}</Text>
-                            </Box>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
                               <Text
                                 sx={{
                                   fontSize: 1,
@@ -1861,13 +1775,13 @@ export default function Planner() {
                                   {stop.name_bn}
                                 </Text>
                               )}
-                            </Box>
+                            </div>
                             {stopConfigs.length > 0 && (
-                              <Box
-                                sx={{
+                              <div
+                                style={{
                                   display: "flex",
                                   alignItems: "center",
-                                  gap: 2,
+                                  gap: 8,
                                   flexShrink: 0,
                                 }}
                               >
@@ -1900,7 +1814,7 @@ export default function Planner() {
                                     0
                                   </Text>
                                 )}
-                              </Box>
+                              </div>
                             )}
                             {isSelected && (
                               <CheckCircle2
@@ -1911,8 +1825,8 @@ export default function Planner() {
                                 }}
                               />
                             )}
-                          </Box>
-                        </Box>
+                          </div>
+                        </button>
                       );
                     })}
                   {routeDetails.stops.filter((s) => s.is_active).length ===
@@ -1929,7 +1843,7 @@ export default function Planner() {
                       No active stops on this route
                     </Text>
                   )}
-                </Box>
+                </div>
               ) : (
                 <Text
                   sx={{
@@ -1943,28 +1857,26 @@ export default function Planner() {
                   Loading stops...
                 </Text>
               )}
-            </Box>
-          </Box>
+            </div>
+          </div>
 
           {/* RIGHT PANEL: Today's runs */}
-          <Box
-            sx={{
+          <div
+            style={{
               width: 288,
-              borderLeft: "1px solid",
-              borderColor: "border.default",
-              bg: "canvas.subtle",
+              borderLeft: "1px solid var(--borderColor-default)",
+              background: "var(--bgColor-muted)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
               flexShrink: 0,
             }}
           >
-            <Box
-              sx={{
-                p: 3,
-                borderBottom: "1px solid",
-                borderColor: "border.muted",
-                bg: "canvas.default",
+            <div
+              style={{
+                padding: 16,
+                borderBottom: "1px solid var(--borderColor-muted)",
+                background: "var(--bgColor-default)",
               }}
             >
               <Heading as="h3" sx={{ fontSize: 2 }}>
@@ -1975,23 +1887,22 @@ export default function Planner() {
               >
                 {runs.length} run{runs.length !== 1 ? "s" : ""} planned
               </Text>
-            </Box>
+            </div>
 
             {conflicts.length > 0 && (
-              <Box
-                sx={{
-                  px: 3,
-                  py: 2,
+              <div
+                style={{
+                  padding: "8px 16px",
                   display: "flex",
                   alignItems: "center",
-                  gap: 2,
+                  gap: 8,
                   borderBottom: "1px solid",
-                  bg: conflicts.some((c) => c.severity === "CRITICAL")
-                    ? "danger.subtle"
-                    : "attention.subtle",
+                  background: conflicts.some((c) => c.severity === "CRITICAL")
+                    ? "var(--bgColor-danger-muted)"
+                    : "var(--bgColor-attention-muted)",
                   borderColor: conflicts.some((c) => c.severity === "CRITICAL")
-                    ? "danger.muted"
-                    : "attention.muted",
+                    ? "var(--borderColor-danger-muted)"
+                    : "var(--borderColor-attention-muted)",
                 }}
               >
                 <AlertTriangle size={14} />
@@ -2007,25 +1918,25 @@ export default function Planner() {
                   {conflicts.length} conflict{conflicts.length !== 1 ? "s" : ""}{" "}
                   detected
                 </Text>
-              </Box>
+              </div>
             )}
 
-            <Box
-              sx={{
+            <div
+              style={{
                 flex: 1,
                 overflowY: "auto",
-                p: 3,
+                padding: 16,
                 display: "flex",
                 flexDirection: "column",
-                gap: 2,
+                gap: 8,
               }}
             >
               {loading ? (
-                <Box sx={{ textAlign: "center", color: "fg.muted", py: 4 }}>
+                <div style={{ textAlign: "center", color: "var(--fgColor-muted)", padding: "16px 0" }}>
                   <Spinner />
-                </Box>
+                </div>
               ) : runs.length === 0 ? (
-                <Box sx={{ textAlign: "center", color: "fg.muted", py: 4 }}>
+                <div style={{ textAlign: "center", color: "var(--fgColor-muted)", padding: "16px 0" }}>
                   <BusIcon
                     size={32}
                     style={{ marginBottom: 8, opacity: 0.3 }}
@@ -2036,7 +1947,7 @@ export default function Planner() {
                   <Text sx={{ fontSize: 0, mt: 1 }}>
                     Create a run using the planner
                   </Text>
-                </Box>
+                </div>
               ) : (
                 runs.map((run) => (
                   <RunCard
@@ -2050,9 +1961,9 @@ export default function Planner() {
                   />
                 ))
               )}
-            </Box>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </div>
       ) : (
         <AutoPlanTab
           session={session}
@@ -2081,6 +1992,6 @@ export default function Planner() {
         confirmLabel={clearing ? "Clearing..." : "Clear All"}
         danger
       />
-    </Box>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, AlertTriangle, CheckCircle, Clock, Plus, X, RefreshCw } from 'lucide-react'
-import { Box, Button, Text, Heading, FormControl, TextInput, Select, Textarea, Label, Flash, Spinner, IconButton } from '@primer/react'
+import { Button, Text, Heading, FormControl, TextInput, Select, Textarea, Label, Flash, Spinner, IconButton } from '@primer/react'
 import type { Incident, CreateIncidentInput, IncidentType, IncidentSeverity, Bus } from '../../shared/types'
 import { useSessionStore } from '../store/sessionStore'
 
@@ -104,33 +104,33 @@ export default function Incidents() {
   const resolved = incidents.filter((i) => i.status === 'RESOLVED')
 
   return (
-    <Box sx={{ minHeight: '100vh', bg: 'canvas.default', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bgColor-default)', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <Box sx={{ px: 4, pt: 4, pb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'border.default', bg: 'canvas.default' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+      <div style={{ padding: '24px 24px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--borderColor-default)', background: 'var(--bgColor-default)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <IconButton icon={ArrowLeft} aria-label="Back" variant="invisible" onClick={() => navigate('/')} sx={{ color: 'fg.muted' }} />
-          <Box>
+          <div>
             <Heading as="h1" sx={{ fontSize: 2 }}>Incidents</Heading>
             <Text sx={{ fontSize: 0, color: 'fg.muted' }}>{open.length} open</Text>
-          </Box>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconButton icon={RefreshCw} aria-label="Refresh" variant="invisible" onClick={load} sx={{ color: 'fg.muted' }} />
           <Button variant="danger" size="small" leadingVisual={Plus} onClick={() => setShowForm(true)}>Report</Button>
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       {/* New incident form */}
       {showForm && (
-        <Box sx={{ mx: 4, mt: 3, bg: 'canvas.subtle', border: '1px solid', borderColor: 'border.default', borderRadius: 2, p: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <div style={{ margin: '16px 24px 0', background: 'var(--bgColor-muted)', border: '1px solid var(--borderColor-default)', borderRadius: 6, padding: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <Heading as="h2" sx={{ fontSize: 2 }}>Report Incident</Heading>
             <IconButton icon={X} aria-label="Close" variant="invisible" size="small" onClick={() => { setShowForm(false); setError(null) }} />
-          </Box>
+          </div>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <FormControl>
                 <FormControl.Label>Type</FormControl.Label>
                 <Select value={form.type} onChange={(e) => {
@@ -149,7 +149,7 @@ export default function Incidents() {
                   <Select.Option value="CRITICAL">Critical</Select.Option>
                 </Select>
               </FormControl>
-            </Box>
+            </div>
 
             {BUS_REQUIRED_TYPES.includes(form.type) && (
               <FormControl required>
@@ -192,53 +192,53 @@ export default function Incidents() {
               />
             </FormControl>
 
-            {error && <Flash variant="danger" sx={{ fontSize: 0 }}>{error}</Flash>}
+            {error && <Flash variant="danger">{error}</Flash>}
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="default" onClick={() => { setShowForm(false); setError(null) }} sx={{ flex: 1 }}>Cancel</Button>
-              <Button variant="danger" disabled={submitting || !form.title.trim()} onClick={handleCreate} sx={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button variant="default" onClick={() => { setShowForm(false); setError(null) }} style={{ flex: 1 }}>Cancel</Button>
+              <Button variant="danger" disabled={submitting || !form.title.trim()} onClick={handleCreate} style={{ flex: 1 }}>
                 {submitting ? 'Reporting…' : 'Report Incident'}
               </Button>
-            </Box>
-          </Box>
-        </Box>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Incidents list */}
-      <Box sx={{ flex: 1, px: 4, py: 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+      <div style={{ flex: 1, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto' }}>
         {loading && incidents.length === 0 ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 128, gap: 2, color: 'fg.muted' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 128, gap: 8, color: 'var(--fgColor-muted)' }}>
             <Spinner size="small" /><Text sx={{ fontSize: 1 }}>Loading…</Text>
-          </Box>
+          </div>
         ) : incidents.length === 0 ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 192, gap: 2, color: 'fg.muted' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 192, gap: 8, color: 'var(--fgColor-muted)' }}>
             <CheckCircle size={40} style={{ color: 'var(--fgColor-success)', opacity: 0.6 }} />
             <Text sx={{ fontSize: 1, fontWeight: 'semibold', color: 'fg.default' }}>No incidents today</Text>
             <Text sx={{ fontSize: 0 }}>All systems operational</Text>
-          </Box>
+          </div>
         ) : (
           <>
             {open.length > 0 && (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {open.map((incident) => (
                   <IncidentCard key={incident.id} incident={incident} onAcknowledge={handleAcknowledge} onResolve={handleResolve} />
                 ))}
-              </Box>
+              </div>
             )}
             {resolved.length > 0 && (
-              <Box sx={{ mt: 3 }}>
-                <Text sx={{ fontSize: 0, color: 'fg.muted', fontWeight: 'semibold', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 2 }}>Resolved</Text>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ marginTop: 16 }}>
+                <Text sx={{ fontSize: 0, color: 'fg.muted', fontWeight: 'semibold', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Resolved</Text>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {resolved.map((incident) => (
                     <IncidentCard key={incident.id} incident={incident} onAcknowledge={handleAcknowledge} onResolve={handleResolve} />
                   ))}
-                </Box>
-              </Box>
+                </div>
+              </div>
             )}
           </>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
@@ -251,43 +251,40 @@ function IncidentCard({ incident, onAcknowledge, onResolve }: {
   const time = new Date(incident.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <Box
-      sx={{
-        bg: 'canvas.default',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: 'border.default',
-        p: 3,
-        opacity: isResolved ? 0.65 : 1,
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-        <Box sx={{ mt: '2px', flexShrink: 0 }}>{STATUS_ICON[incident.status]}</Box>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', mb: 1 }}>
+    <div style={{
+      background: 'var(--bgColor-default)',
+      borderRadius: 6,
+      border: '1px solid var(--borderColor-default)',
+      padding: 16,
+      opacity: isResolved ? 0.65 : 1,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ marginTop: 2, flexShrink: 0 }}>{STATUS_ICON[incident.status]}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
             <Text sx={{ fontSize: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{incident.title}</Text>
             <Label variant={SEVERITY_VARIANT[incident.severity]}>{incident.severity}</Label>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'fg.muted' }}>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--fgColor-muted)' }}>
             <Text sx={{ fontSize: 0 }}>{TYPE_LABELS[incident.type]}</Text>
             <Text sx={{ fontSize: 0 }}>·</Text>
             <Text sx={{ fontSize: 0 }}>{time}</Text>
             {incident.reported_by && <><Text sx={{ fontSize: 0 }}>·</Text><Text sx={{ fontSize: 0 }}>{incident.reported_by}</Text></>}
-          </Box>
+          </div>
           {incident.description && (
             <Text sx={{ fontSize: 0, color: 'fg.muted', mt: 1, display: 'block' }}>{incident.description}</Text>
           )}
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       {!isResolved && (
-        <Box sx={{ display: 'flex', gap: 2, mt: 3, pt: 3, borderTop: '1px solid', borderColor: 'border.muted' }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--borderColor-muted)' }}>
           {incident.status === 'OPEN' && (
-            <Button size="small" variant="default" onClick={() => onAcknowledge(incident.id)} sx={{ flex: 1 }}>Acknowledge</Button>
+            <Button size="small" variant="default" onClick={() => onAcknowledge(incident.id)} style={{ flex: 1 }}>Acknowledge</Button>
           )}
-          <Button size="small" variant="primary" onClick={() => onResolve(incident.id)} sx={{ flex: 1 }}>Mark Resolved</Button>
-        </Box>
+          <Button size="small" variant="primary" onClick={() => onResolve(incident.id)} style={{ flex: 1 }}>Mark Resolved</Button>
+        </div>
       )}
-    </Box>
+    </div>
   )
 }

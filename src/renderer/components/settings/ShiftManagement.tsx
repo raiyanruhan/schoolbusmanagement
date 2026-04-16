@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Plus, Pencil, Clock, ChevronRight, Save, FileSpreadsheet, Upload, Trash2 } from 'lucide-react'
-import { Box, Button, Text, Heading, FormControl, TextInput, Select, Flash, IconButton, Spinner } from '@primer/react'
+import { Button, Text, Heading, FormControl, TextInput, Select, Flash, IconButton, Spinner } from '@primer/react'
 import Modal from '../ui/Modal'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { useUiStore } from '../../store/uiStore'
@@ -44,8 +44,8 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
   const set = (k: keyof ShiftFormData, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
   return (
-    <Box as="form" onSubmit={(e: React.FormEvent) => { e.preventDefault(); onSubmit(form) }} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+    <form onSubmit={(e: React.FormEvent) => { e.preventDefault(); onSubmit(form) }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <FormControl required>
           <FormControl.Label>Shift Name</FormControl.Label>
           <TextInput value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Morning" block />
@@ -54,15 +54,15 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
           <FormControl.Label>Sort Order</FormControl.Label>
           <TextInput type="number" min={1} value={form.sort_order} onChange={(e) => set('sort_order', e.target.value)} block />
         </FormControl>
-      </Box>
+      </div>
       <FormControl>
         <FormControl.Label>Bengali Name</FormControl.Label>
         <TextInput value={form.name_bn} onChange={(e) => set('name_bn', e.target.value)} block />
       </FormControl>
 
-      <Box sx={{ borderTop: '1px solid', borderColor: 'border.muted', pt: 3 }}>
+      <div style={{ borderTop: '1px solid var(--borderColor-muted)', paddingTop: 16 }}>
         <Text sx={{ fontSize: 0, fontWeight: 'semibold', color: 'fg.muted', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 2 }}>Inbound (Pickup → School)</Text>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <FormControl>
             <FormControl.Label>Buses Leave School</FormControl.Label>
             <TextInput type="time" value={form.inbound_depart_school} onChange={(e) => set('inbound_depart_school', e.target.value)} block />
@@ -71,12 +71,12 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
             <FormControl.Label>Classes Start</FormControl.Label>
             <TextInput type="time" value={form.school_start_time} onChange={(e) => set('school_start_time', e.target.value)} block />
           </FormControl>
-        </Box>
-      </Box>
+        </div>
+      </div>
 
-      <Box sx={{ borderTop: '1px solid', borderColor: 'border.muted', pt: 3 }}>
+      <div style={{ borderTop: '1px solid var(--borderColor-muted)', paddingTop: 16 }}>
         <Text sx={{ fontSize: 0, fontWeight: 'semibold', color: 'fg.muted', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 2 }}>Outbound (School → Drops)</Text>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <FormControl>
             <FormControl.Label>Classes End</FormControl.Label>
             <TextInput type="time" value={form.school_end_time} onChange={(e) => set('school_end_time', e.target.value)} block />
@@ -85,10 +85,10 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
             <FormControl.Label>Buses Depart School</FormControl.Label>
             <TextInput type="time" value={form.outbound_depart_school} onChange={(e) => set('outbound_depart_school', e.target.value)} block />
           </FormControl>
-        </Box>
-      </Box>
+        </div>
+      </div>
 
-      <Box sx={{ borderTop: '1px solid', borderColor: 'border.muted', pt: 3, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+      <div style={{ borderTop: '1px solid var(--borderColor-muted)', paddingTop: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <FormControl>
           <FormControl.Label>Gender Mode</FormControl.Label>
           <Select value={form.gender_mode} onChange={(e) => set('gender_mode', e.target.value as GenderMode)}>
@@ -101,14 +101,14 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
           <FormControl.Label>Default Overload</FormControl.Label>
           <TextInput type="number" min={0} value={form.default_overload} onChange={(e) => set('default_overload', e.target.value)} block />
         </FormControl>
-      </Box>
+      </div>
 
-      {error && <Flash variant="danger" sx={{ fontSize: 0 }}>{error}</Flash>}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 1 }}>
+      {error && <Flash variant="danger">{error}</Flash>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
         <Button type="button" variant="default" onClick={onCancel}>Cancel</Button>
         <Button type="submit" variant="primary" disabled={loading}>{loading ? 'Saving...' : initial ? 'Save Changes' : 'Create Shift'}</Button>
-      </Box>
-    </Box>
+      </div>
+    </form>
   )
 }
 
@@ -152,57 +152,57 @@ function StopConfigPanel({ shift }: { shift: Shift }) {
   }
 
   if (rows.length === 0) {
-    return <Box sx={{ p: 4, textAlign: 'center', color: 'fg.muted', fontSize: 1 }}>No active stops found. Add routes and stops first.</Box>
+    return <div style={{ padding: 16, textAlign: 'center', color: 'var(--fgColor-muted)', fontSize: 14 }}>No active stops found. Add routes and stops first.</div>
   }
 
   const activeRows = rows.filter((r) => r.is_active)
 
   return (
-    <Box sx={{ overflowX: 'auto' }}>
-      <Box as="table" sx={{ width: '100%', borderCollapse: 'collapse' }}>
-        <Box as="thead" sx={{ bg: 'canvas.subtle', borderBottom: '1px solid', borderColor: 'border.default' }}>
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead style={{ background: 'var(--bgColor-muted)', borderBottom: '1px solid var(--borderColor-default)' }}>
           <tr>
             {['Route', 'Stop', 'Active', 'Boys', 'Girls', 'Total', ''].map((h) => (
-              <Box key={h} as="th" sx={{ px: 3, py: 2, textAlign: 'left', fontSize: 0, fontWeight: 'semibold', color: 'fg.muted', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</Box>
+              <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: 'var(--fgColor-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
             ))}
           </tr>
-        </Box>
+        </thead>
         <tbody>
           {rows.map((row) => (
-            <Box key={row.stop_id} as="tr" sx={{ borderBottom: '1px solid', borderColor: 'border.muted', opacity: row.is_active ? 1 : 0.6, '&:hover': { bg: 'canvas.subtle' } }}>
-              <Box as="td" sx={{ px: 3, py: 2, fontSize: 0, color: 'fg.muted' }}>{row.route_name}</Box>
-              <Box as="td" sx={{ px: 3, py: 2, fontSize: 1, fontWeight: 'medium' }}>{row.stop_name}</Box>
-              <Box as="td" sx={{ px: 3, py: 2, textAlign: 'center' }}>
+            <tr key={row.stop_id} className="hov-bg-subtle" style={{ borderBottom: '1px solid var(--borderColor-muted)', opacity: row.is_active ? 1 : 0.6 }}>
+              <td style={{ padding: '8px 12px', fontSize: 12, color: 'var(--fgColor-muted)' }}>{row.route_name}</td>
+              <td style={{ padding: '8px 12px', fontSize: 14, fontWeight: 500 }}>{row.stop_name}</td>
+              <td style={{ padding: '8px 12px', textAlign: 'center' }}>
                 <input type="checkbox" checked={row.is_active} onChange={(e) => updateRow(row.stop_id, { is_active: e.target.checked })} />
-              </Box>
-              <Box as="td" sx={{ px: 3, py: 2, textAlign: 'center' }}>
+              </td>
+              <td style={{ padding: '8px 12px', textAlign: 'center' }}>
                 <TextInput type="number" min={0} value={String(row.planned_boys)} onChange={(e) => updateRow(row.stop_id, { planned_boys: parseInt(e.target.value) || 0 })} disabled={!row.is_active} sx={{ width: 64, textAlign: 'center' }} />
-              </Box>
-              <Box as="td" sx={{ px: 3, py: 2, textAlign: 'center' }}>
+              </td>
+              <td style={{ padding: '8px 12px', textAlign: 'center' }}>
                 <TextInput type="number" min={0} value={String(row.planned_girls)} onChange={(e) => updateRow(row.stop_id, { planned_girls: parseInt(e.target.value) || 0 })} disabled={!row.is_active} sx={{ width: 64, textAlign: 'center' }} />
-              </Box>
-              <Box as="td" sx={{ px: 3, py: 2, textAlign: 'center', fontWeight: 'semibold' }}>
+              </td>
+              <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>
                 {row.is_active ? row.planned_boys + row.planned_girls : '—'}
-              </Box>
-              <Box as="td" sx={{ px: 3, py: 2 }}>
+              </td>
+              <td style={{ padding: '8px 12px' }}>
                 <Button size="small" variant="primary" leadingVisual={Save} disabled={saving === row.stop_id} onClick={() => handleSave(row)}>
                   {saving === row.stop_id ? '...' : 'Save'}
                 </Button>
-              </Box>
-            </Box>
+              </td>
+            </tr>
           ))}
         </tbody>
-        <Box as="tfoot" sx={{ bg: 'canvas.subtle', borderTop: '1px solid', borderColor: 'border.default' }}>
+        <tfoot style={{ background: 'var(--bgColor-muted)', borderTop: '1px solid var(--borderColor-default)', position: 'sticky', bottom: 0 }}>
           <tr>
-            <Box as="td" colSpan={3} sx={{ px: 3, py: 2, fontSize: 0, color: 'fg.muted', fontWeight: 'medium' }}>Totals (active stops)</Box>
-            <Box as="td" sx={{ px: 3, py: 2, textAlign: 'center', fontWeight: 'semibold', color: 'accent.fg' }}>{activeRows.reduce((s, r) => s + r.planned_boys, 0)}</Box>
-            <Box as="td" sx={{ px: 3, py: 2, textAlign: 'center', fontWeight: 'semibold', color: 'done.fg' }}>{activeRows.reduce((s, r) => s + r.planned_girls, 0)}</Box>
-            <Box as="td" sx={{ px: 3, py: 2, textAlign: 'center', fontWeight: 'semibold' }}>{activeRows.reduce((s, r) => s + r.planned_boys + r.planned_girls, 0)}</Box>
-            <Box as="td" />
+            <td colSpan={3} style={{ padding: '8px 12px', fontSize: 12, color: 'var(--fgColor-muted)', fontWeight: 500 }}>Totals (active stops)</td>
+            <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--fgColor-accent)' }}>{activeRows.reduce((s, r) => s + r.planned_boys, 0)}</td>
+            <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>{activeRows.reduce((s, r) => s + r.planned_girls, 0)}</td>
+            <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600 }}>{activeRows.reduce((s, r) => s + r.planned_boys + r.planned_girls, 0)}</td>
+            <td />
           </tr>
-        </Box>
-      </Box>
-    </Box>
+        </tfoot>
+      </table>
+    </div>
   )
 }
 
@@ -285,75 +285,74 @@ export default function ShiftManagement() {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100%' }}>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       {/* Left: Shift list */}
-      <Box sx={{ width: 256, borderRight: '1px solid', borderColor: 'border.default', bg: 'canvas.default', display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'border.muted', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ width: 256, borderRight: '1px solid var(--borderColor-default)', background: 'var(--bgColor-default)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: 12, borderBottom: '1px solid var(--borderColor-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Heading as="h2" sx={{ fontSize: 2 }}>Shifts</Heading>
           <IconButton icon={Plus} aria-label="Add shift" variant="primary" size="small" onClick={() => { setFormError(null); setAddOpen(true) }} />
-        </Box>
+        </div>
         {loading ? (
-          <Box sx={{ p: 4, textAlign: 'center', color: 'fg.muted' }}><Spinner /></Box>
+          <div style={{ padding: 16, textAlign: 'center', color: 'var(--fgColor-muted)' }}><Spinner /></div>
         ) : (
-          <Box sx={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ flex: 1, overflowY: 'auto' }}>
             {shifts.map((shift) => (
-              <Box key={shift.id} sx={{ borderBottom: '1px solid', borderColor: 'border.muted', display: 'flex', alignItems: 'center', bg: selected?.id === shift.id ? 'accent.subtle' : 'transparent', borderLeft: '2px solid', borderLeftColor: selected?.id === shift.id ? 'accent.emphasis' : 'transparent', '&:hover': { bg: selected?.id === shift.id ? 'accent.subtle' : 'canvas.subtle' } }}>
-                <Box as="button" onClick={() => setSelected(shift)} sx={{ flex: 1, textAlign: 'left', px: 3, py: 3, display: 'flex', alignItems: 'center', gap: 2, bg: 'transparent', border: 'none', cursor: 'pointer' }}>
-                  <Box sx={{ width: 36, height: 36, bg: 'accent.subtle', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'accent.fg' }}>
-                    <Clock size={16} />
-                  </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Text sx={{ fontSize: 1, fontWeight: 'medium', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shift.name}</Text>
-                    <Text sx={{ fontSize: 0, color: 'fg.muted' }}>{shift.gender_mode}</Text>
-                  </Box>
-                  <ChevronRight size={16} style={{ opacity: 0.4, flexShrink: 0 }} />
-                </Box>
+              <div key={shift.id} style={{ borderBottom: '1px solid var(--borderColor-muted)', display: 'flex', alignItems: 'center', background: selected?.id === shift.id ? 'var(--bgColor-accent-muted)' : 'transparent'}}>
+                <button onClick={() => setSelected(shift)} style={{ flex: 1, textAlign: 'left', padding: '12px', display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Text sx={{ fontSize: 1,  fontWeight: 'medium', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shift.name}</Text>
+                  </div>
+                </button>
                 <IconButton icon={Trash2} aria-label="Delete" variant="invisible" size="small" onClick={() => setDeleteShift(shift)} sx={{ mr: 1, color: 'danger.fg' }} />
-              </Box>
+              </div>
             ))}
-            {shifts.length === 0 && <Box sx={{ p: 4, textAlign: 'center', color: 'fg.muted', fontSize: 1 }}>No shifts yet</Box>}
-          </Box>
+            {shifts.length === 0 && <div style={{ padding: 16, textAlign: 'center', color: 'var(--fgColor-muted)', fontSize: 14 }}>No shifts yet</div>}
+          </div>
         )}
-      </Box>
+      </div>
 
       {/* Right: Shift details + stop configs */}
-      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {!selected ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'fg.muted' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: 'var(--fgColor-muted)' }}>
             <Clock size={48} style={{ marginBottom: 12, opacity: 0.3 }} />
             <Text sx={{ fontSize: 2, fontWeight: 'semibold' }}>Select a shift</Text>
-          </Box>
+          </div>
         ) : (
-          <Box sx={{ p: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
-              <Box>
+          <>
+            {/* Sticky header */}
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--borderColor-default)', flexShrink: 0, background: 'var(--bgColor-default)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
                 <Heading as="h2" sx={{ fontSize: 3 }}>{selected.name}</Heading>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mt: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
                   {selected.inbound_depart_school && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Inbound depart: <Text sx={{ fontWeight: 'semibold' }}>{selected.inbound_depart_school}</Text></Text>}
                   {selected.outbound_depart_school && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Outbound depart: <Text sx={{ fontWeight: 'semibold' }}>{selected.outbound_depart_school}</Text></Text>}
-                  <Text sx={{ fontSize: 0, bg: 'canvas.subtle', border: '1px solid', borderColor: 'border.default', borderRadius: 9999, px: 2, py: '2px', color: 'fg.muted' }}>{selected.gender_mode}</Text>
+                  <span style={{ fontSize: 12, background: 'var(--bgColor-muted)', border: '1px solid var(--borderColor-default)', borderRadius: 9999, padding: '2px 8px', color: 'var(--fgColor-muted)' }}>{selected.gender_mode}</span>
                   <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Overload: +{selected.default_overload}</Text>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', gap: 2 }}>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input ref={importFileRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImportConfigs} />
                 <Button size="small" variant="default" leadingVisual={importing ? Upload : FileSpreadsheet} disabled={importing} onClick={() => importFileRef.current?.click()}>
                   {importing ? 'Importing...' : 'Import'}
                 </Button>
                 <Button size="small" variant="default" leadingVisual={Pencil} onClick={() => { setFormError(null); setEditShift(selected) }}>Edit Shift</Button>
-              </Box>
-            </Box>
+              </div>
+            </div>
 
-            <Box sx={{ border: '1px solid', borderColor: 'border.default', borderRadius: 2, overflow: 'hidden' }}>
-              <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'border.muted', bg: 'canvas.subtle' }}>
-                <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block' }}>Student Counts per Stop</Text>
-                <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mt: 1 }}>Configure planned student counts for each stop in this shift</Text>
-              </Box>
-              <StopConfigPanel key={selected.id} shift={selected} />
-            </Box>
-          </Box>
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+              <div style={{ border: '1px solid var(--borderColor-default)', borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--borderColor-muted)', background: 'var(--bgColor-muted)' }}>
+                  <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block' }}>Student Counts per Stop</Text>
+                  <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mt: 1 }}>Configure planned student counts for each stop in this shift</Text>
+                </div>
+                <StopConfigPanel key={selected.id} shift={selected} />
+              </div>
+            </div>
+          </>
         )}
-      </Box>
+      </div>
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="New Shift" size="lg">
         <ShiftForm onSubmit={handleAdd} onCancel={() => setAddOpen(false)} loading={formLoading} error={formError} />
@@ -362,6 +361,6 @@ export default function ShiftManagement() {
         {editShift && <ShiftForm initial={editShift} onSubmit={handleEdit} onCancel={() => setEditShift(null)} loading={formLoading} error={formError} />}
       </Modal>
       <ConfirmDialog open={!!deleteShift} onClose={() => setDeleteShift(null)} onConfirm={handleDelete} title="Delete Shift" message={`Delete "${deleteShift?.name}"? All runs and stop configs for this shift will also be permanently deleted.`} confirmLabel="Delete" danger />
-    </Box>
+    </div>
   )
 }

@@ -23,7 +23,8 @@ jspm_packages/
 
 # VS Code
 .vscode/
-
+.claude/
+/.claude
 # OS files
 .DS_Store
 Thumbs.db

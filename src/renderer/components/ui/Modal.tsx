@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { Dialog, Box, Heading } from '@primer/react'
+import { Dialog, Heading } from '@primer/react'
 
 interface ModalProps {
   open: boolean
@@ -25,7 +25,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
         </Dialog.Header>
       )}
     >
-      <Box sx={{ p: 4 }}>{children}</Box>
+      <div style={{ padding: 24 }}>{children}</div>
     </Dialog>
   )
 }
