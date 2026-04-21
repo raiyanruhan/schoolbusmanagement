@@ -44,6 +44,10 @@ export default function Settings() {
             position: "sticky",
             top: 0,
             height: "fit-content",
+            background: "var(--bgColor-default)",
+            borderRadius: 8,
+         padding: "8px 8px 12px",
+            marginTop: 8,
           }}
         >
           <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>

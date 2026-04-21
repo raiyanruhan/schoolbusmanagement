@@ -77,7 +77,7 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
       </div>
 
       <div className="border-t border-gray-100 pt-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Inbound (Pickup → School)</p>
+        <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Inbound (Pickup → School)</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="form-label">Buses Leave School</label>
@@ -91,7 +91,7 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
       </div>
 
       <div className="border-t border-gray-100 pt-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Outbound (School → Drops)</p>
+        <p className="text-xs text-gray-500 uppercase tracking-wide mb-3">Outbound (School → Drops)</p>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="form-label">Classes End</label>
@@ -257,13 +257,13 @@ function StopConfigPanel({ shift }: { shift: Shift }) {
         <tfoot className="bg-gray-50 border-t border-gray-200">
           <tr>
             <td colSpan={3} className="table-cell text-xs text-gray-500 font-medium">Totals (active stops)</td>
-            <td className="table-cell text-center font-semibold text-brand-700">
+            <td className="table-cell text-center text-brand-700">
               {rows.filter((r) => r.is_active).reduce((s, r) => s + r.planned_boys, 0)}
             </td>
-            <td className="table-cell text-center font-semibold text-purple-700">
+            <td className="table-cell text-center text-purple-700">
               {rows.filter((r) => r.is_active).reduce((s, r) => s + r.planned_girls, 0)}
             </td>
-            <td className="table-cell text-center font-semibold">
+            <td className="table-cell text-center">
               {rows.filter((r) => r.is_active).reduce((s, r) => s + r.planned_boys + r.planned_girls, 0)}
             </td>
             <td />
@@ -403,7 +403,7 @@ export default function ShiftManagement() {
             {/* Stop Configs */}
             <div className="card overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-700">Student Counts per Stop</h3>
+                <h3 className="text-sm text-gray-700">Student Counts per Stop</h3>
                 <p className="text-xs text-gray-400 mt-0.5">Configure planned student counts for each stop in this shift</p>
               </div>
               <StopConfigPanel key={selected.id} shift={selected} />

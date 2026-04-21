@@ -94,7 +94,7 @@ export function AutoPlanTab({
                 {strategy === 'SMALLEST_ROUTE_FIRST' && 'Smallest Route First'}
                 {strategy === 'SEQUENCE_ORDER' && 'Sequence Order'}
               </ActionMenu.Button>
-              <ActionMenu.Overlay>
+              <ActionMenu.Overlay width="auto" sx={{ minWidth: '257px' }}>
                 <ActionList>
                   <ActionList.Item selected={strategy === 'LARGEST_ROUTE_FIRST'} onSelect={() => { setStrategy('LARGEST_ROUTE_FIRST'); setPlan(null) }}>Largest Route First</ActionList.Item>
                   <ActionList.Item selected={strategy === 'SMALLEST_ROUTE_FIRST'} onSelect={() => { setStrategy('SMALLEST_ROUTE_FIRST'); setPlan(null) }}>Smallest Route First</ActionList.Item>

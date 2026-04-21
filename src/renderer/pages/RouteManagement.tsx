@@ -306,7 +306,7 @@ export default function RouteManagement() {
             {/* Stops */}
             <div className="card overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-700">Stops ({selected.stops.length})</p>
+                <p className="text-sm text-gray-700">Stops ({selected.stops.length})</p>
                 <button onClick={() => { setFormError(null); setAddStopOpen(true) }} className="btn-primary btn-sm">
                   <Plus className="w-3.5 h-3.5" /> Add Stop
                 </button>

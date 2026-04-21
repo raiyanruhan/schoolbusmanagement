@@ -1,12 +1,49 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Bus as BusIcon, MapPin, CheckCircle2, AlertTriangle, ArrowRight, ArrowLeft } from 'lucide-react'
-import { Button, Text, Heading, Label, Spinner } from '@primer/react'
-import ConfirmDialog from '../ui/ConfirmDialog'
-import { RunCard, busStatusBorderColor } from './RunCard'
+import { Button, Text, Heading, Spinner, SelectPanel, ActionMenu, ActionList, type SelectPanelItemInput } from '@primer/react'
+import { TriangleDownIcon } from '@primer/octicons-react'
 import { CapacityBar } from './CapacityBar'
 import { usePlannerStore } from '../../store/plannerStore'
 import { useUiStore } from '../../store/uiStore'
-import type { RouteWithStops, StopConfig, Conflict } from '../../../shared/types'
+import type { RouteWithStops, StopConfig, Conflict, RunWithDetails } from '../../../shared/types'
+
+type TableRow = { key: string; stopNames: string; boysBus: string; girlsBus: string }
+
+function buildTableRows(details: RunWithDetails[], shiftId?: string | null): TableRow[] {
+  const filtered = shiftId ? details.filter((r) => r.shift_id === shiftId) : details
+  // group stops by (boysBus, girlsBus) combo key
+  const groupMap = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
+  for (const run of filtered) {
+    const busNum = run.bus?.number ?? '—'
+    // determine combo key after merging with existing entry for this run's stops
+    for (const rs of run.stops) {
+      // find or create a group that matches this stop's current assignment
+      // We key groups by route+gender so stops in same route share a group
+      const groupKey = run.route_id + '|' + (run.gender === 'BOYS' ? 'B' : run.gender === 'GIRLS' ? 'G' : 'M')
+      if (!groupMap.has(groupKey)) groupMap.set(groupKey, { stops: new Map(), boysBus: '', girlsBus: '' })
+      const g = groupMap.get(groupKey)!
+      if (run.gender === 'BOYS' || run.gender === 'MIXED') g.boysBus = busNum
+      if (run.gender === 'GIRLS' || run.gender === 'MIXED') g.girlsBus = busNum
+      if (!g.stops.has(rs.stop_id)) g.stops.set(rs.stop_id, { name: rs.stop?.name ?? rs.stop_id, seq: rs.stop?.sequence_order ?? rs.sequence_order })
+    }
+  }
+  // merge groups with same route (combine boys+girls into one row per route)
+  const routeMerge = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
+  for (const [groupKey, g] of groupMap) {
+    const routeId = groupKey.split('|')[0]
+    if (!routeMerge.has(routeId)) routeMerge.set(routeId, { stops: new Map(), boysBus: '', girlsBus: '' })
+    const m = routeMerge.get(routeId)!
+    if (g.boysBus) m.boysBus = g.boysBus
+    if (g.girlsBus) m.girlsBus = g.girlsBus
+    for (const [id, s] of g.stops) if (!m.stops.has(id)) m.stops.set(id, s)
+  }
+  const rows: TableRow[] = []
+  for (const [routeId, m] of routeMerge) {
+    const names = [...m.stops.values()].sort((a, b) => a.seq - b.seq).map((s) => s.name).join(', ')
+    rows.push({ key: routeId, stopNames: names, boysBus: m.boysBus, girlsBus: m.girlsBus })
+  }
+  return rows.sort((a, b) => a.stopNames.localeCompare(b.stopNames))
+}
 
 export function ManualPlanTab({
   session,
@@ -22,13 +59,15 @@ export function ManualPlanTab({
     buses, routes, shifts, runs, loading,
     selectedShift, selectedBus, selectedRoute, selectedStopIds, plannerDirection, selectedGender,
     setSelectedShift, setSelectedBus, setSelectedRoute, toggleStop, clearStopSelection,
-    setDirection, setGender, confirmRun, deleteRun,
+    setDirection, setGender, confirmRun,
   } = usePlannerStore()
 
   const [routeDetails, setRouteDetails] = useState<RouteWithStops | null>(null)
   const [stopConfigs, setStopConfigs] = useState<StopConfig[]>([])
-  const [deleteRunId, setDeleteRunId] = useState<string | null>(null)
+  const [runDetails, setRunDetails] = useState<RunWithDetails[]>([])
   const [confirming, setConfirming] = useState(false)
+  const [busPickerOpen, setBusPickerOpen] = useState(false)
+  const [busFilter, setBusFilter] = useState('')
 
   useEffect(() => {
     if (selectedRoute) {
@@ -47,20 +86,19 @@ export function ManualPlanTab({
     })
   }, [selectedShift?.id])
 
+  const runIds = useMemo(() => runs.map((r) => r.id).join(','), [runs])
+  useEffect(() => {
+    window.api.planner.getAllRunsWithDetails(session.id).then((r) => {
+      if (r.success) setRunDetails(r.data)
+    })
+  }, [session.id, runIds])
+
   const handleConfirmRun = async () => {
     setConfirming(true)
     const result = await confirmRun(session.id)
     setConfirming(false)
     if (result.success) { showToast('Run created successfully'); onRunChanged() }
     else showToast(result.error ?? 'Failed to create run', 'error')
-  }
-
-  const handleDeleteRun = async () => {
-    if (!deleteRunId) return
-    const result = await deleteRun(deleteRunId)
-    setDeleteRunId(null)
-    if (result.success) { showToast('Run deleted', 'info'); onRunChanged() }
-    else showToast(result.error ?? 'Failed to delete run', 'error')
   }
 
   const selectedStudentCount = routeDetails?.stops
@@ -74,6 +112,24 @@ export function ManualPlanTab({
   const activeRoutes = routes.filter((r) => r.is_active)
   const activeShifts = shifts.filter((s) => s.is_active)
 
+  const busItems = useMemo<SelectPanelItemInput[]>(() =>
+    activeBuses.map((bus) => {
+      const inUse = runs.some((r) => r.bus_id === bus.id && r.shift_id === selectedShift?.id)
+      return {
+        id: bus.id,
+        text: `Bus ${bus.number}`,
+        description: `${bus.capacity} seats${inUse ? ' · In use' : ''}`,
+      }
+    }),
+    [activeBuses, runs, selectedShift?.id]
+  )
+
+  const filteredBusItems = busFilter
+    ? busItems.filter((item) => item.text?.toLowerCase().includes(busFilter.toLowerCase()))
+    : busItems
+
+  const selectedBusItem = busItems.find((item) => (item as SelectPanelItemInput & { id: string }).id === selectedBus?.id)
+
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       {/* LEFT PANEL: Config */}
@@ -82,19 +138,28 @@ export function ManualPlanTab({
           {/* Shift */}
           <div style={{ padding: 16, borderBottom: '1px solid var(--borderColor-muted)' }}>
             <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block', mb: 2 }}>1. Select Shift</Text>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {activeShifts.map((shift) => (
-                <button
-                  key={shift.id}
-                  onClick={() => setSelectedShift(shift)}
-                  className="hov-bg-subtle"
-                  style={{ textAlign: 'left', padding: '8px 12px', borderRadius: 6, fontSize: 14, border: 'none', cursor: 'pointer', background: selectedShift?.id === shift.id ? 'var(--bgColor-accent-muted)' : 'transparent', color: selectedShift?.id === shift.id ? 'var(--fgColor-accent)' : 'var(--fgColor-default)', fontWeight: selectedShift?.id === shift.id ? 600 : 400 }}
-                >
-                  {shift.name}
-                </button>
-              ))}
-              {activeShifts.length === 0 && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>No active shifts</Text>}
-            </div>
+            {activeShifts.length === 0 ? (
+              <Text sx={{ fontSize: 0, color: 'fg.muted' }}>No active shifts</Text>
+            ) : (
+              <ActionMenu>
+                <ActionMenu.Button sx={{ width: '100%' }}>
+                  {selectedShift?.name ?? 'Select a shift…'}
+                </ActionMenu.Button>
+                <ActionMenu.Overlay width="auto" sx={{ minWidth: '287px' }}>
+                  <ActionList>
+                    {activeShifts.map((shift) => (
+                      <ActionList.Item
+                        key={shift.id}
+                        selected={selectedShift?.id === shift.id}
+                        onSelect={() => setSelectedShift(shift)}
+                      >
+                        {shift.name}
+                      </ActionList.Item>
+                    ))}
+                  </ActionList>
+                </ActionMenu.Overlay>
+              </ActionMenu>
+            )}
           </div>
 
           {/* Direction */}
@@ -109,29 +174,39 @@ export function ManualPlanTab({
           {/* Bus selector */}
           <div style={{ padding: 16, borderBottom: '1px solid var(--borderColor-muted)' }}>
             <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block', mb: 2 }}>3. Select Bus</Text>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {activeBuses.map((bus) => {
-                const isSelected = selectedBus?.id === bus.id
-                const isUsed = runs.some((r) => r.bus_id === bus.id && r.shift_id === selectedShift?.id)
-                return (
-                  <button
-                    key={bus.id}
-                    onClick={() => setSelectedBus(isSelected ? null : bus)}
-                    className="hov-bg-subtle"
-                    style={{ textAlign: 'left', borderRadius: 6, border: `2px solid ${isSelected ? 'var(--borderColor-accent-emphasis)' : busStatusBorderColor(bus.status)}`, cursor: 'pointer', background: 'transparent', padding: '8px 12px', opacity: isUsed ? 0.6 : 1 }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Text sx={{ fontSize: 1, fontWeight: 'semibold' }}>
-                        {bus.number} <Text sx={{ color: 'fg.muted', fontWeight: 'normal' }}>({bus.capacity} seats)</Text>
-                      </Text>
-                      {isSelected && <CheckCircle2 size={15} style={{ color: 'var(--fgColor-accent)' }} />}
-                      {isUsed && !isSelected && <Label variant="attention">In use</Label>}
-                    </div>
-                  </button>
-                )
-              })}
-              {activeBuses.length === 0 && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>No active buses</Text>}
-            </div>
+            <SelectPanel
+              title="Select Bus"
+              placeholder="Search buses..."
+                sx={{ width: '100%' }} // Ensures the component container fills the parent
+  overlayProps={{ 
+    sx: { 
+      zIndex: 9999, 
+      width: '20.6%',     // Forces the dropdown to match the anchor width
+      minWidth: 'auto'   // Removes default minimum width constraints
+    } 
+  }}
+              open={busPickerOpen}
+              onOpenChange={(isOpen) => { setBusPickerOpen(isOpen); if (!isOpen) setBusFilter('') }}
+              items={filteredBusItems}
+              selected={selectedBusItem}
+              onSelectedChange={(item: SelectPanelItemInput | undefined) => {
+                if (!item) { setSelectedBus(null); return }
+                const bus = activeBuses.find((b) => b.id === (item as SelectPanelItemInput & { id: string }).id)
+                setSelectedBus(bus ?? null)
+              }}
+              onFilterChange={setBusFilter}
+              renderAnchor={({ children: _children, ...anchorProps }) => (
+                <Button
+                  {...anchorProps}
+                  trailingAction={TriangleDownIcon}
+                  sx={{ width: '100%', justifyContent: 'space-between' }}
+                >
+                  {selectedBus ? `Bus ${selectedBus.number} (${selectedBus.capacity} seats)` : 'Pick a bus'}
+                </Button>
+              )}
+              height="medium"
+            />
+            {activeBuses.length === 0 && <Text sx={{ fontSize: 0, color: 'fg.muted', mt: 1, display: 'block' }}>No active buses</Text>}
           </div>
 
           {/* Route selector */}
@@ -247,7 +322,7 @@ export function ManualPlanTab({
       </div>
 
       {/* RIGHT PANEL: Today's runs */}
-      <div style={{ width: 288, borderLeft: '1px solid var(--borderColor-default)', background: 'var(--bgColor-muted)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ width: 488, borderLeft: '1px solid var(--borderColor-default)', background: 'var(--bgColor-muted)', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
         <div style={{ padding: 16, borderBottom: '1px solid var(--borderColor-muted)', background: 'var(--bgColor-default)' }}>
           <Heading as="h3" sx={{ fontSize: 2 }}>Today's Runs</Heading>
           <Text sx={{ fontSize: 0, color: 'fg.muted', mt: 1, display: 'block' }}>{runs.length} run{runs.length !== 1 ? 's' : ''} planned</Text>
@@ -262,32 +337,40 @@ export function ManualPlanTab({
           </div>
         )}
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', color: 'var(--fgColor-muted)', padding: '16px 0' }}><Spinner /></div>
+            <div style={{ textAlign: 'center', color: 'var(--fgColor-muted)', padding: '32px 0' }}><Spinner /></div>
           ) : runs.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--fgColor-muted)', padding: '16px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--fgColor-muted)', padding: 32 }}>
               <BusIcon size={32} style={{ marginBottom: 8, opacity: 0.3 }} />
               <Text sx={{ fontSize: 1, display: 'block' }}>No runs yet</Text>
               <Text sx={{ fontSize: 0, mt: 1 }}>Create a run using the planner</Text>
             </div>
-          ) : (
-            runs.map((run) => (
-              <RunCard key={run.id} run={run} buses={buses} routes={routes} shifts={shifts} conflicts={conflicts} onDelete={setDeleteRunId} />
-            ))
-          )}
+          ) : (() => {
+            const rows = buildTableRows(runDetails, selectedShift?.id)
+            return (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--bgColor-default)', position: 'sticky', top: 0, zIndex: 1, borderBottom: '1px solid var(--borderColor-muted)' }}>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--fgColor-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stop Names</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: 'var(--fgColor-accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: 80 }}>Boys</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: '#db2777', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: 80 }}>Girls</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => (
+                    <tr key={row.key} style={{ background: i % 2 === 0 ? 'var(--bgColor-default)' : 'var(--bgColor-muted)', borderTop: '1px solid var(--borderColor-muted)' }}>
+                      <td style={{ padding: '8px 12px', fontSize: 13, color: 'var(--fgColor-default)', lineHeight: 1.5 }}>{row.stopNames}</td>
+                      <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: row.boysBus ? 'var(--fgColor-accent)' : 'var(--fgColor-subtle)' }}>{row.boysBus || '—'}</td>
+                      <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: row.girlsBus ? '#db2777' : 'var(--fgColor-subtle)' }}>{row.girlsBus || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+          })()}
         </div>
       </div>
-
-      <ConfirmDialog
-        open={!!deleteRunId}
-        onClose={() => setDeleteRunId(null)}
-        onConfirm={handleDeleteRun}
-        title="Delete Run"
-        message="Are you sure you want to delete this run? This cannot be undone."
-        confirmLabel="Delete"
-        danger
-      />
     </div>
   )
 }

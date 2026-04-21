@@ -78,9 +78,9 @@ export default function Planner() {
             style={{ padding: '8px 12px', fontSize: 14, fontWeight: 500, border: 'none', background: 'transparent', cursor: 'pointer', borderBottom: `2px solid ${activeTab === tab ? 'var(--borderColor-accent-emphasis)' : 'transparent'}`, color: activeTab === tab ? 'var(--fgColor-accent)' : 'var(--fgColor-muted)', marginBottom: -1 }}
           >
             {tab === 'manual' ? (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> Manual</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>Manual</span>
             ) : (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Zap size={14} /> Auto-Plan</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}> Automatic</span>
             )}
           </button>
         ))}

@@ -287,7 +287,7 @@ export default function ShiftManagement() {
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       {/* Left: Shift list */}
-      <div style={{ width: 256, borderRight: '1px solid var(--borderColor-default)', background: 'var(--bgColor-default)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: 256, borderRight: '1px solid var(--borderColor-default)', background: 'var(--bgColor-default)', display: 'flex', flexDirection: 'column', boxShadow: '3px 0 10px rgba(0,0,0,0.08)' }}>
         <div style={{ padding: 12, borderBottom: '1px solid var(--borderColor-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Heading as="h2" sx={{ fontSize: 2 }}>Shifts</Heading>
           <IconButton icon={Plus} aria-label="Add shift" variant="primary" size="small" onClick={() => { setFormError(null); setAddOpen(true) }} />
@@ -342,7 +342,7 @@ export default function ShiftManagement() {
 
             {/* Scrollable content */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-              <div style={{ border: '1px solid var(--borderColor-default)', borderRadius: 6, overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--borderColor-default)', borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.06)' }}>
                 <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--borderColor-muted)', background: 'var(--bgColor-muted)' }}>
                   <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block' }}>Student Counts per Stop</Text>
                   <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mt: 1 }}>Configure planned student counts for each stop in this shift</Text>

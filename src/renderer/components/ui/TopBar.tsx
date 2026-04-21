@@ -18,6 +18,7 @@ export default function TopBar({
   backTo = '/',
   backLabel = 'Back',
   title,
+  right,
 }: TopBarProps) {
   const navigate = useNavigate();
 
@@ -38,9 +39,9 @@ export default function TopBar({
       }}
     >
       {/* Left Section */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
         gap: '12px',
         minWidth: 0,           // Allows truncation
       }}>
@@ -93,6 +94,12 @@ export default function TopBar({
             {title}
           </Button>
       </div>
+      {/* Right Section */}
+      {right && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {right}
+        </div>
+      )}
     </header>
   );
 }

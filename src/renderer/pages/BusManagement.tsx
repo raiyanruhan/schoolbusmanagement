@@ -197,7 +197,7 @@ export default function BusManagement() {
             <tbody>
               {buses.map((bus) => (
                 <tr key={bus.id} className="table-row">
-                  <td className="table-cell font-semibold text-gray-900">{bus.number}</td>
+                  <td className="table-cell text-gray-900">{bus.number}</td>
                   <td className="table-cell">{bus.capacity} seats</td>
                   <td className="table-cell">{statusBadge(bus.status)}</td>
                   <td className="table-cell text-gray-400 text-xs">{bus.notes ?? '—'}</td>

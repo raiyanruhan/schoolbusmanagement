@@ -273,11 +273,13 @@ export default function BusManagement() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+    boxShadow: "0 2px 54px #0000001a, 0 1px 4px #00000012",
+
         }}
       >
         <div>
           <Heading as="h1" sx={{ fontSize: 4 }}>
-            Fleet Management
+            Bus Management
           </Heading>
           <Text
             sx={{ color: "fg.muted", fontSize: 1, mt: 1, display: "block" }}
@@ -322,6 +324,7 @@ export default function BusManagement() {
           border: "1px solid var(--borderColor-default)",
           borderRadius: 6,
           overflow: "hidden",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.09), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
         {loading ? (
@@ -373,7 +376,6 @@ export default function BusManagement() {
                         fontSize: 12,
                         fontWeight: 600,
                         color: "var(--fgColor-muted)",
-                        textTransform: "uppercase",
                         letterSpacing: "0.05em",
                       }}
                     >
@@ -409,7 +411,7 @@ export default function BusManagement() {
                     {bus.capacity} seats
                   </td>
                   <td style={{ padding: "12px 16px" }}>
-                    <Label variant={STATUS_VARIANT[bus.status]}>
+                    <Label>
                       {bus.status}
                     </Label>
                   </td>
