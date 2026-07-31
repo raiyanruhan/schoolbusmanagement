@@ -348,21 +348,34 @@ export function ManualPlanTab({
             </div>
           ) : (() => {
             const rows = buildTableRows(runDetails, selectedShift?.id)
+            const combined = rows.length > 0 && rows.every((r) => r.boysBus && r.boysBus === r.girlsBus)
             return (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ background: 'var(--bgColor-default)', position: 'sticky', top: 0, zIndex: 1, borderBottom: '1px solid var(--borderColor-muted)' }}>
-                    <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--fgColor-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stop Names</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: 'var(--fgColor-accent)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: 80 }}>Boys</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: '#db2777', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: 80 }}>Girls</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, color: 'var(--fgColor-muted)', fontWeight: 600,  letterSpacing: '0.05em' }}>Stop Names</th>
+                    {combined ? (
+                      <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: 'var(--fgColor-muted)', fontWeight: 600,  letterSpacing: '0.05em', width: 100 }}>Bus No.</th>
+                    ) : (
+                      <>
+                        <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: 'var(--fgColor-accent)', fontWeight: 600,  letterSpacing: '0.05em', width: 80 }}>Boys</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: '#db2777', fontWeight: 600,  letterSpacing: '0.05em', width: 80 }}>Girls</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row, i) => (
                     <tr key={row.key} style={{ background: i % 2 === 0 ? 'var(--bgColor-default)' : 'var(--bgColor-muted)', borderTop: '1px solid var(--borderColor-muted)' }}>
                       <td style={{ padding: '8px 12px', fontSize: 13, color: 'var(--fgColor-default)', lineHeight: 1.5 }}>{row.stopNames}</td>
-                      <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: row.boysBus ? 'var(--fgColor-accent)' : 'var(--fgColor-subtle)' }}>{row.boysBus || '—'}</td>
-                      <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: row.girlsBus ? '#db2777' : 'var(--fgColor-subtle)' }}>{row.girlsBus || '—'}</td>
+                      {combined ? (
+                        <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: 'var(--fgColor-default)' }}>{row.boysBus}</td>
+                      ) : (
+                        <>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: row.boysBus ? 'var(--fgColor-accent)' : 'var(--fgColor-subtle)' }}>{row.boysBus || '—'}</td>
+                          <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, fontSize: 13, color: row.girlsBus ? '#db2777' : 'var(--fgColor-subtle)' }}>{row.girlsBus || '—'}</td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>

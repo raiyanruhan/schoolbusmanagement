@@ -87,3 +87,4 @@ $RECYCLE.BIN/
 
 # Optional: Ignore test snapshots
 __snapshots__/
+.claude/worktrees/
