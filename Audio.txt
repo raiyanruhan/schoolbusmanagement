@@ -1,0 +1,5 @@
+ uses pre-recorded audio to generate sound. like:
+[Greetings,] [Stands list] [Bus number] [boys] [bus number] [girls]
+[আসসালামু আলাইকুম, ]
+[সি-ব্লক হইতে শেরপুর শেরুয়া বটতলা, ] [২২ নম্বর বাস] [ছাত্র, ] [২৩ নম্বর বাস, ] [ছাত্রী].
+I mean, user will record audio per route/stop and bus and phrases, then after the plan generates, app builds the audio automaticallywithout tts.
