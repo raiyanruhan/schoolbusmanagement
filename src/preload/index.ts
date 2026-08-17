@@ -10,7 +10,8 @@ import type {
   CreateRunInput,
   RunDirection, AssignmentStrategy,
   EngineOutput, ProposedRun, BestPlanResult,
-  Incident, AuditLog, Conflict, SystemHealth, CreateIncidentInput
+  Incident, AuditLog, Conflict, SystemHealth, CreateIncidentInput,
+  AudioClip, SaveAudioClipInput, RouteStopTimestamp, SaveStopTimestampsInput, AnnouncementGroup
 } from '../shared/types'
 
 // The API exposed to the renderer — strictly typed
@@ -135,6 +136,22 @@ const api = {
       ipcRenderer.invoke('incident:getAuditLog', entity_type, entity_id),
     getRecentAuditLog: (limit?: number): Promise<IpcResult<AuditLog[]>> =>
       ipcRenderer.invoke('incident:getRecentAuditLog', limit)
+  },
+
+  // ── Audio / Announcements ──────────────────────────────────────────────
+  audio: {
+    getAll: (): Promise<IpcResult<AudioClip[]>> =>
+      ipcRenderer.invoke('audio:getAll'),
+    saveClip: (input: SaveAudioClipInput): Promise<IpcResult<AudioClip>> =>
+      ipcRenderer.invoke('audio:saveClip', input),
+    deleteClip: (id: string): Promise<IpcResult<void>> =>
+      ipcRenderer.invoke('audio:deleteClip', id),
+    getStopTimestamps: (route_id: string): Promise<IpcResult<RouteStopTimestamp[]>> =>
+      ipcRenderer.invoke('audio:getStopTimestamps', route_id),
+    saveStopTimestamps: (input: SaveStopTimestampsInput): Promise<IpcResult<void>> =>
+      ipcRenderer.invoke('audio:saveStopTimestamps', input),
+    resolveAnnouncements: (input: { session_id: string; shift_id?: string; direction?: RunDirection }): Promise<IpcResult<AnnouncementGroup[]>> =>
+      ipcRenderer.invoke('audio:resolveAnnouncements', input)
   },
 
   // ── Window management ──────────────────────────────────────────────────

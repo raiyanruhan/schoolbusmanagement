@@ -1,15 +1,17 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Bus, MapPin, Clock } from "lucide-react";
+import { Bus, MapPin, Clock, Volume2 } from "lucide-react";
 import { Text } from "@primer/react";
 import TopBar from "../components/ui/TopBar";
 import BusManagement from "../components/settings/BusManagement";
 import RouteManagement from "../components/settings/RouteManagement";
 import ShiftManagement from "../components/settings/ShiftManagement";
+import AudioManagement from "../components/settings/AudioManagement";
 
 const TABS = [
   { id: "buses", label: "Bus", icon: Bus, component: BusManagement },
   { id: "routes", label: "Routes", icon: MapPin, component: RouteManagement },
   { id: "shifts", label: "Shifts", icon: Clock, component: ShiftManagement },
+  { id: "audio", label: "Audio", icon: Volume2, component: AudioManagement },
 ];
 
 export default function Settings() {

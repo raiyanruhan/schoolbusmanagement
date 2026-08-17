@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bus, MapPin, Users, Activity, ArrowRight, Settings, Monitor, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react'
-import { Button, Heading, Text, Flash, IconButton } from '@primer/react'
+import { Bus, MapPin, Users, Activity, ArrowRight, Settings, Monitor, AlertTriangle, CheckCircle, AlertCircle, Volume2 } from 'lucide-react'
+import { Button, Heading, Text, Flash, IconButton, ActionMenu, ActionList } from '@primer/react'
 import { useSessionStore } from '../store/sessionStore'
-import type { SystemHealth } from '../../shared/types'
+import AnnouncementPlayer from '../components/audio/AnnouncementPlayer'
+import type { SystemHealth, AnnouncementGroup } from '../../shared/types'
 
 export default function Dashboard() {
   const { stats, loadStats } = useSessionStore()
   const navigate = useNavigate()
   const user = "Raiyan"
   const [health, setHealth] = useState<SystemHealth | null>(null)
+  const [announcements, setAnnouncements] = useState<AnnouncementGroup[]>([])
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementGroup | null>(null)
 
   useEffect(() => { loadStats() }, [loadStats])
 
@@ -23,6 +26,16 @@ export default function Dashboard() {
     loadHealth()
     const interval = setInterval(loadHealth, 30_000)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    async function loadAnnouncements() {
+      const sessionRes = await window.api.session.getOrCreateToday()
+      if (!sessionRes.success) return
+      const res = await window.api.audio.resolveAnnouncements({ session_id: sessionRes.data.id })
+      if (res.success) setAnnouncements(res.data)
+    }
+    loadAnnouncements()
   }, [])
 
   const today = new Date().toLocaleDateString('en-GB', {
@@ -67,6 +80,34 @@ export default function Dashboard() {
             <CheckCircle size={14} />
             <Text sx={{ fontSize: 0, fontWeight: 'medium' }}>All systems operational</Text>
           </Flash>
+        </div>
+      )}
+
+      {/* Announcement player */}
+      {announcements.length > 0 && (
+        <div style={{ margin: '8px 32px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <ActionMenu>
+            <ActionMenu.Button leadingVisual={Volume2} size="small">
+              {selectedAnnouncement
+                ? `${selectedAnnouncement.route_name} — ${selectedAnnouncement.stop_names.join(', ')}`
+                : `Play announcement (${announcements.length})`}
+            </ActionMenu.Button>
+            <ActionMenu.Overlay width="medium">
+              <ActionList>
+                {announcements.map((a) => (
+                  <ActionList.Item
+                    key={a.key}
+                    selected={selectedAnnouncement?.key === a.key}
+                    onSelect={() => setSelectedAnnouncement(a)}
+                  >
+                    {a.route_name} — {a.stop_names.join(', ')}
+                    {!a.isComplete && <ActionList.TrailingVisual><AlertTriangle size={14} /></ActionList.TrailingVisual>}
+                  </ActionList.Item>
+                ))}
+              </ActionList>
+            </ActionMenu.Overlay>
+          </ActionMenu>
+          {selectedAnnouncement && <AnnouncementPlayer group={selectedAnnouncement} />}
         </div>
       )}
 
