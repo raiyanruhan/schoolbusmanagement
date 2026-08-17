@@ -19,9 +19,11 @@
     "@types/styled-components": "^5.1.36",
     "better-sqlite3": "^12.8.0",
     "drizzle-orm": "^0.31.2",
+    "howler": "^2.2.4",
     "react-is": "^19.2.5",
     "styled-components": "^5.3.11",
     "uuid": "^9.0.1",
+    "wavesurfer.js": "^7.12.11",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -31,6 +33,7 @@
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "@types/better-sqlite3": "^7.6.10",
+    "@types/howler": "^2.2.13",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

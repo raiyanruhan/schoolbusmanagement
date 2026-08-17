@@ -2,6 +2,35 @@ import type Database from 'better-sqlite3'
 
 const MIGRATIONS: Array<{ version: number; sql: string }> = [
   {
+    version: 4,
+    sql: `
+      CREATE TABLE IF NOT EXISTS audio_clips (
+        id          TEXT PRIMARY KEY,
+        type        TEXT NOT NULL CHECK(type IN ('GREETING','ROUTE','BUS','GENDER')),
+        ref_id      TEXT,
+        file_path   TEXT NOT NULL,
+        duration_ms INTEGER NOT NULL DEFAULT 0,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL,
+        UNIQUE(type, ref_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS route_stop_timestamps (
+        id         TEXT PRIMARY KEY,
+        route_id   TEXT NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+        stop_id    TEXT NOT NULL REFERENCES stops(id) ON DELETE CASCADE,
+        start_ms   INTEGER NOT NULL,
+        end_ms     INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(route_id, stop_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_audio_clips_type ON audio_clips(type);
+      CREATE INDEX IF NOT EXISTS idx_route_stop_ts_route ON route_stop_timestamps(route_id);
+    `
+  },
+  {
     version: 3,
     sql: `
       CREATE TABLE IF NOT EXISTS incidents (

@@ -369,3 +369,68 @@ export interface BestPlanResult {
   strategyUsed: AssignmentStrategy
   comparison: StrategyComparisonEntry[]
 }
+
+// ─── Audio / Announcement System ───────────────────────────────────────────
+
+export type AudioClipType = 'GREETING' | 'ROUTE' | 'BUS' | 'GENDER'
+
+export interface AudioClip {
+  id: string
+  type: AudioClipType
+  ref_id: string | null
+  file_path: string
+  /** audio-file:// URL the renderer can play directly */
+  url: string
+  duration_ms: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SaveAudioClipInput {
+  type: AudioClipType
+  /** route_id, bus_id, or gender value — null for GREETING */
+  ref_id: string | null
+  /** raw audio bytes (from MediaRecorder Blob.arrayBuffer()) */
+  buffer: ArrayBuffer
+  duration_ms: number
+}
+
+export interface RouteStopTimestamp {
+  id: string
+  route_id: string
+  stop_id: string
+  start_ms: number
+  end_ms: number
+}
+
+export interface SaveStopTimestampsInput {
+  route_id: string
+  timestamps: Array<{ stop_id: string; start_ms: number; end_ms: number }>
+}
+
+/** One bus+gender pairing within an announcement (e.g. boys bus, girls bus sharing the same stops) */
+export interface AnnouncementEntry {
+  run_id: string
+  bus_id: string
+  bus_number: string
+  gender: RunGender
+  /** null if no clip recorded yet for this bus */
+  busClipUrl: string | null
+  /** null if no clip recorded yet for this gender label */
+  genderClipUrl: string | null
+}
+
+/** One playable announcement: greeting + a trimmed route-clip segment + one or more bus/gender entries */
+export interface AnnouncementGroup {
+  key: string
+  route_id: string
+  route_name: string
+  stop_names: string[]
+  greetingClipUrl: string | null
+  routeClipUrl: string | null
+  /** trim window within the route clip, ms — null if timestamps aren't marked for these stops */
+  routeSegment: { start_ms: number; end_ms: number } | null
+  entries: AnnouncementEntry[]
+  /** true if every clip needed to play this announcement has been recorded */
+  isComplete: boolean
+}

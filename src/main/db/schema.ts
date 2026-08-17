@@ -139,6 +139,34 @@ export const incidents = sqliteTable('incidents', {
   metadata:       text('metadata')
 })
 
+// ─── Audio Clips ───────────────────────────────────────────────────────────
+
+export const audioClips = sqliteTable('audio_clips', {
+  id:          text('id').primaryKey(),
+  type:        text('type', { enum: ['GREETING', 'ROUTE', 'BUS', 'GENDER'] }).notNull(),
+  ref_id:      text('ref_id'),
+  file_path:   text('file_path').notNull(),
+  duration_ms: integer('duration_ms').notNull().default(0),
+  created_at:  text('created_at').notNull(),
+  updated_at:  text('updated_at').notNull()
+}, (t) => ({
+  uniqueTypeRef: unique('uq_audio_clip_type_ref').on(t.type, t.ref_id)
+}))
+
+// ─── Route Stop Timestamps (marks stop boundaries inside a route clip) ──────
+
+export const routeStopTimestamps = sqliteTable('route_stop_timestamps', {
+  id:         text('id').primaryKey(),
+  route_id:   text('route_id').notNull().references(() => routes.id, { onDelete: 'cascade' }),
+  stop_id:    text('stop_id').notNull().references(() => stops.id, { onDelete: 'cascade' }),
+  start_ms:   integer('start_ms').notNull(),
+  end_ms:     integer('end_ms').notNull(),
+  created_at: text('created_at').notNull(),
+  updated_at: text('updated_at').notNull()
+}, (t) => ({
+  uniqueRouteStop: unique('uq_route_stop_timestamp').on(t.route_id, t.stop_id)
+}))
+
 // ─── Audit Log ─────────────────────────────────────────────────────────────
 
 export const auditLog = sqliteTable('audit_log', {
@@ -163,5 +191,7 @@ export const schema = {
   runs,
   runStops,
   incidents,
-  auditLog
+  auditLog,
+  audioClips,
+  routeStopTimestamps
 }
