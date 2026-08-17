@@ -19,6 +19,7 @@
     "@types/styled-components": "^5.1.36",
     "better-sqlite3": "^12.8.0",
     "drizzle-orm": "^0.31.2",
+    "electron-updater": "^6.8.9",
     "howler": "^2.2.4",
     "react-is": "^19.2.5",
     "styled-components": "^5.3.11",
@@ -66,19 +67,17 @@
       "out/**/*",
       "!out/**/*.map"
     ],
-    "extraResources": [
-      {
-        "from": "resources",
-        "to": "resources"
-      }
-    ],
     "win": {
-      "target": "nsis",
-      "icon": "resources/icon.ico"
+      "target": "nsis"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "raiyanruhan",
+      "repo": "schoolbusmanagement"
     }
   }
 }

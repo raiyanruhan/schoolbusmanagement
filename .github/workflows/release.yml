@@ -1,0 +1,35 @@
+name: Release
+
+# Cut a release by bumping the version and pushing the tag it creates:
+#   npm version patch   (or minor / major)
+#   git push --follow-tags
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # electron-builder rebuilds native deps (better-sqlite3) for Electron's
+      # ABI automatically before packaging — windows-latest ships full MSVC
+      # build tools, so this works even though local dev machines may not.
+      - name: Build and publish installer
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --publish always
