@@ -69,9 +69,9 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     // When shift changes, reset gender to the appropriate default
     const defaultGender: RunGender =
       shift?.gender_mode === 'SEPARATED' ? 'BOYS' : 'MIXED'
-    set({ selectedShift: shift, selectedGender: defaultGender, selectedStopIds: [] })
+    set({ selectedShift: shift, selectedGender: defaultGender })
   },
-  setSelectedBus: (bus) => set({ selectedBus: bus, selectedStopIds: [] }),
+  setSelectedBus: (bus) => set({ selectedBus: bus }),
   setSelectedRoute: (route) => set({ selectedRoute: route, selectedStopIds: [] }),
 
   toggleStop: (stopId: string) => {
