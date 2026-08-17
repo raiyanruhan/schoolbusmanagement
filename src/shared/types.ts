@@ -425,6 +425,8 @@ export interface AnnouncementGroup {
   key: string
   route_id: string
   route_name: string
+  shift_id: string
+  direction: string
   stop_names: string[]
   greetingClipUrl: string | null
   routeClipUrl: string | null

@@ -52,7 +52,10 @@ function toAudioClip(row: AudioClipRow): AudioClip {
     type: row.type,
     ref_id: row.ref_id,
     file_path: row.file_path,
-    url: `audio-file:///${row.file_path}?t=${Date.parse(row.updated_at) || 0}`,
+    // Explicit "clip" host — with a "standard" scheme, three slashes (empty
+    // host) lets Chromium's URL parser swallow the first path segment as the
+    // host instead of pathname, silently dropping it. A real host avoids that.
+    url: `audio-file://clip/${row.file_path}?t=${Date.parse(row.updated_at) || 0}`,
     duration_ms: row.duration_ms,
     created_at: row.created_at,
     updated_at: row.updated_at

@@ -1,6 +1,6 @@
-import { app, BrowserWindow, shell, ipcMain, protocol, net } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, protocol } from 'electron'
 import { join } from 'path'
-import { pathToFileURL } from 'url'
+import { existsSync, readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb, closeDb, getSqlite } from './db'
 import { seedInitialData } from './db/seed'
@@ -9,7 +9,7 @@ import { registerAllIpcHandlers } from './ipc'
 // Serves recorded announcement clips (userData/data/audio/**) to the renderer.
 // Must be registered before app is ready.
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'audio-file', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, bypassCSP: true } }
+  { scheme: 'audio-file', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, bypassCSP: true, corsEnabled: true } }
 ])
 
 function createWindow(): BrowserWindow {
@@ -65,10 +65,26 @@ app.whenReady().then(() => {
     const url = new URL(request.url)
     const relPath = decodeURIComponent(url.pathname).replace(/^\/+/, '')
     const filePath = join(audioDir, relPath)
+    const found = existsSync(filePath)
+    console.log(`[audio-file] ${request.url} -> ${filePath} (${found ? 'found' : 'MISSING'})`)
     if (!filePath.startsWith(audioDir)) {
-      return new Response('Forbidden', { status: 403 })
+      return Promise.resolve(new Response('Forbidden', { status: 403 }))
     }
-    return net.fetch(pathToFileURL(filePath).toString())
+    if (!found) {
+      // Expected for clips that haven't been recorded yet — fail quietly,
+      // don't hand a missing path to net.fetch (it logs a noisy net:: error).
+      return Promise.resolve(new Response('Not found', { status: 404 }))
+    }
+    // net.fetch(file://...) doesn't set Content-Type, so <audio>/Howler
+    // silently refuse to play it — read the bytes and set it ourselves.
+    const data = readFileSync(filePath)
+    return Promise.resolve(new Response(new Uint8Array(data), {
+      headers: {
+        'Content-Type': 'audio/webm',
+        'Content-Length': String(data.length),
+        'Access-Control-Allow-Origin': '*'
+      }
+    }))
   })
 
   // ── Display board window ────────────────────────────────────────────────

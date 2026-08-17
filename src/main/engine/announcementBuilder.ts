@@ -15,6 +15,8 @@ import type { AnnouncementEntry, AnnouncementGroup, RunWithDetails } from '../..
 export interface RunGroupInput {
   route_id: string
   route_name: string
+  shift_id: string
+  direction: string
   /** stops in sequence order, deduped across the group's runs */
   stops: Array<{ stop_id: string; stop_name: string; sequence_order: number }>
   members: Array<{ run_id: string; bus_id: string; bus_number: string; gender: RunWithDetails['gender'] }>
@@ -34,6 +36,8 @@ export function groupRunsForAnnouncements(runs: RunWithDetails[]): RunGroupInput
       groups.set(groupKey, {
         route_id: run.route_id,
         route_name: run.route.name,
+        shift_id: run.shift_id,
+        direction: run.direction,
         stops: sortedStops.map((s) => ({
           stop_id: s.stop_id,
           stop_name: s.stop.name,
@@ -100,6 +104,8 @@ export function resolveAnnouncementGroups(
       key: `${g.route_id}|${g.stops.map((s) => s.stop_id).join(',')}`,
       route_id: g.route_id,
       route_name: g.route_name,
+      shift_id: g.shift_id,
+      direction: g.direction,
       stop_names: g.stops.map((s) => s.stop_name),
       greetingClipUrl: clips.greeting?.url ?? null,
       routeClipUrl: routeClip?.url ?? null,

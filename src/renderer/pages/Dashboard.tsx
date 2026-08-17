@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bus, MapPin, Users, Activity, ArrowRight, Settings, Monitor, AlertTriangle, CheckCircle, AlertCircle, Volume2 } from 'lucide-react'
 import { Button, Heading, Text, Flash, IconButton, ActionMenu, ActionList } from '@primer/react'
 import { useSessionStore } from '../store/sessionStore'
 import AnnouncementPlayer from '../components/audio/AnnouncementPlayer'
-import type { SystemHealth, AnnouncementGroup } from '../../shared/types'
+import type { SystemHealth, AnnouncementGroup, Shift } from '../../shared/types'
+
+type PlayOption = {
+  label: string
+  groups: AnnouncementGroup[]
+}
 
 export default function Dashboard() {
   const { stats, loadStats } = useSessionStore()
@@ -12,7 +17,11 @@ export default function Dashboard() {
   const user = "Raiyan"
   const [health, setHealth] = useState<SystemHealth | null>(null)
   const [announcements, setAnnouncements] = useState<AnnouncementGroup[]>([])
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementGroup | null>(null)
+  const [selectedOption, setSelectedOption] = useState<PlayOption | null>(null)
+  const [shifts, setShifts] = useState<Shift[]>([])
+
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const [menuWidth, setMenuWidth] = useState<number | undefined>(undefined)
 
   useEffect(() => { loadStats() }, [loadStats])
 
@@ -29,14 +38,51 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    async function loadAnnouncements() {
+    async function loadData() {
+      const shiftRes = await window.api.shift.getAll()
+      if (shiftRes.success) setShifts(shiftRes.data)
+
       const sessionRes = await window.api.session.getOrCreateToday()
       if (!sessionRes.success) return
       const res = await window.api.audio.resolveAnnouncements({ session_id: sessionRes.data.id })
       if (res.success) setAnnouncements(res.data)
     }
-    loadAnnouncements()
+    loadData()
   }, [])
+
+  useEffect(() => {
+    if (wrapperRef.current) setMenuWidth(wrapperRef.current.offsetWidth)
+    const handleResize = () => {
+      if (wrapperRef.current) setMenuWidth(wrapperRef.current.offsetWidth)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [announcements.length])
+
+  const playOptions = useMemo(() => {
+    if (announcements.length === 0) return []
+    const opts: PlayOption[] = []
+    
+    // Group announcements by shift + direction
+    for (const shift of shifts) {
+      for (const dir of ['INBOUND', 'OUTBOUND']) {
+        const groups = announcements.filter(a => a.shift_id === shift.id && a.direction === dir)
+        if (groups.length > 0) {
+          opts.push({
+            label: `Play ${shift.name} (${dir === 'INBOUND' ? 'School Bound' : 'Return'})`,
+            groups
+          })
+        }
+      }
+    }
+    
+    // Fallback if no shifts matched but we have announcements
+    if (opts.length === 0) {
+      opts.push({ label: 'Play All Announcements', groups: announcements })
+    }
+    
+    return opts
+  }, [announcements, shifts])
 
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -85,29 +131,36 @@ export default function Dashboard() {
 
       {/* Announcement player */}
       {announcements.length > 0 && (
-        <div style={{ margin: '8px 32px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ margin: '8px 32px 0', display: 'flex', flexDirection: 'column', gap: 8 }} ref={wrapperRef}>
           <ActionMenu>
             <ActionMenu.Button leadingVisual={Volume2} size="small">
-              {selectedAnnouncement
-                ? `${selectedAnnouncement.route_name} — ${selectedAnnouncement.stop_names.join(', ')}`
-                : `Play announcement (${announcements.length})`}
+              {selectedOption
+                ? selectedOption.label
+                : `Play announcements`}
             </ActionMenu.Button>
-            <ActionMenu.Overlay width="medium">
+            <ActionMenu.Overlay sx={{ width: menuWidth ? `${menuWidth}px` : 'auto', maxWidth: 'none' }}>
               <ActionList>
-                {announcements.map((a) => (
-                  <ActionList.Item
-                    key={a.key}
-                    selected={selectedAnnouncement?.key === a.key}
-                    onSelect={() => setSelectedAnnouncement(a)}
-                  >
-                    {a.route_name} — {a.stop_names.join(', ')}
-                    {!a.isComplete && <ActionList.TrailingVisual><AlertTriangle size={14} /></ActionList.TrailingVisual>}
-                  </ActionList.Item>
-                ))}
+                {playOptions.map((opt, i) => {
+                  const isComplete = opt.groups.length > 0 && opt.groups.every(g => g.isComplete)
+                  return (
+                    <ActionList.Item
+                      key={i}
+                      selected={selectedOption === opt}
+                      onSelect={() => setSelectedOption(opt)}
+                    >
+                      {opt.label}
+                      {!isComplete && (
+                        <ActionList.TrailingVisual>
+                          <AlertTriangle size={14} color="var(--fgColor-attention)" />
+                        </ActionList.TrailingVisual>
+                      )}
+                    </ActionList.Item>
+                  )
+                })}
               </ActionList>
             </ActionMenu.Overlay>
           </ActionMenu>
-          {selectedAnnouncement && <AnnouncementPlayer group={selectedAnnouncement} />}
+          {selectedOption && <AnnouncementPlayer groups={selectedOption.groups} label={selectedOption.label} />}
         </div>
       )}
 
