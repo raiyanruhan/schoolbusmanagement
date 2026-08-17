@@ -6,6 +6,7 @@ import { registerPlannerHandlers } from './planner.ipc'
 import { registerAutoPlannerHandlers } from './autoPlanner.ipc'
 import { registerExcelHandlers } from './excel.ipc'
 import { registerIncidentHandlers } from './incident.ipc'
+import { registerAudioHandlers } from './audio.ipc'
 
 export function registerAllIpcHandlers(): void {
   registerBusHandlers()
@@ -16,5 +17,6 @@ export function registerAllIpcHandlers(): void {
   registerAutoPlannerHandlers()
   registerExcelHandlers()
   registerIncidentHandlers()
+  registerAudioHandlers()
   console.log('[IPC] All handlers registered')
 }

@@ -1,9 +1,16 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, protocol, net } from 'electron'
 import { join } from 'path'
+import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb, closeDb, getSqlite } from './db'
 import { seedInitialData } from './db/seed'
 import { registerAllIpcHandlers } from './ipc'
+
+// Serves recorded announcement clips (userData/data/audio/**) to the renderer.
+// Must be registered before app is ready.
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'audio-file', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, bypassCSP: true } }
+])
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -51,6 +58,18 @@ app.whenReady().then(() => {
   initDb()
   seedInitialData(getSqlite())
   registerAllIpcHandlers()
+
+  // ── audio-file:// protocol — serves recorded announcement clips ────────────
+  const audioDir = join(app.getPath('userData'), 'data', 'audio')
+  protocol.handle('audio-file', (request) => {
+    const url = new URL(request.url)
+    const relPath = decodeURIComponent(url.pathname).replace(/^\/+/, '')
+    const filePath = join(audioDir, relPath)
+    if (!filePath.startsWith(audioDir)) {
+      return new Response('Forbidden', { status: 403 })
+    }
+    return net.fetch(pathToFileURL(filePath).toString())
+  })
 
   // ── Display board window ────────────────────────────────────────────────
   ipcMain.handle('window:openDisplay', () => {
