@@ -170,12 +170,14 @@ export const runRepo = {
     session_id: string,
     stop_id: string,
     shift_id: string,
-    direction: Run['direction']
+    direction: Run['direction'],
+    gender: Run['gender']
   ): boolean {
     const db = getDb()
-    // A stop can be used once per shift+direction combination.
-    // INBOUND and OUTBOUND are independent assignments.
-    const sessionRuns = db.select({ id: runs.id })
+    // A stop can be used once per shift+direction+gender combination.
+    // INBOUND and OUTBOUND are independent assignments; BOYS and GIRLS runs
+    // may share a stop, but MIXED overlaps with both.
+    const sessionRuns = db.select({ id: runs.id, gender: runs.gender })
       .from(runs)
       .where(and(
         eq(runs.session_id, session_id),
@@ -185,6 +187,8 @@ export const runRepo = {
       .all()
 
     for (const run of sessionRuns) {
+      const overlaps = run.gender === gender || run.gender === 'MIXED' || gender === 'MIXED'
+      if (!overlaps) continue
       const rs = db.select()
         .from(runStops)
         .where(and(eq(runStops.run_id, run.id), eq(runStops.stop_id, stop_id)))

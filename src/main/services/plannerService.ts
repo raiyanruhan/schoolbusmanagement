@@ -87,7 +87,8 @@ export const plannerService = {
           parsed.session_id,
           stopId,
           parsed.shift_id,
-          parsed.direction
+          parsed.direction,
+          parsed.gender
         )
         if (alreadyAssigned) {
           const stop = routeStops.find((s) => s.id === stopId)

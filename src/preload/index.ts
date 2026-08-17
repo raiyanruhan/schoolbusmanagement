@@ -156,8 +156,8 @@ const api = {
 
   // ── Window management ──────────────────────────────────────────────────
   window: {
-    openDisplay: (): Promise<void> =>
-      ipcRenderer.invoke('window:openDisplay')
+    openDisplay: (params: { shift_id: string; direction: RunDirection }): Promise<void> =>
+      ipcRenderer.invoke('window:openDisplay', params)
   },
 
   // ── Excel import ───────────────────────────────────────────────────────

@@ -2,6 +2,8 @@ import { app, BrowserWindow, shell, ipcMain, protocol } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import electronUpdater from 'electron-updater'
+const { autoUpdater } = electronUpdater
 import { initDb, closeDb, getSqlite } from './db'
 import { seedInitialData } from './db/seed'
 import { registerAllIpcHandlers } from './ipc'
@@ -88,7 +90,12 @@ app.whenReady().then(() => {
   })
 
   // ── Display board window ────────────────────────────────────────────────
-  ipcMain.handle('window:openDisplay', () => {
+  // Which shift/direction to show is chosen in the main app and baked into
+  // the launch URL — the public-facing kiosk window itself has no controls.
+  ipcMain.handle('window:openDisplay', (_e, params: { shift_id: string; direction: 'INBOUND' | 'OUTBOUND' }) => {
+    const query = new URLSearchParams({ shift: params.shift_id, direction: params.direction }).toString()
+    const hash = `/display?${query}`
+
     const displayWin = new BrowserWindow({
       width: 1280,
       height: 800,
@@ -101,9 +108,9 @@ app.whenReady().then(() => {
       }
     })
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-      displayWin.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#/display`)
+      displayWin.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#${hash}`)
     } else {
-      displayWin.loadFile(join(__dirname, '../renderer/index.html'), { hash: '/display' })
+      displayWin.loadFile(join(__dirname, '../renderer/index.html'), { hash })
     }
   })
 
@@ -112,6 +119,15 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // ── Auto-update ────────────────────────────────────────────────────────
+  // Reads publish config baked into app-update.yml at build time (package.json
+  // build.publish). No-ops harmlessly if not packaged / not running from an
+  // installed build, so it's safe to just always call this.
+  if (!is.dev) {
+    autoUpdater.checkForUpdatesAndNotify()
+    setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 4 * 60 * 60 * 1000)
+  }
 })
 
 app.on('window-all-closed', () => {
