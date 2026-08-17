@@ -5,43 +5,32 @@ import { TriangleDownIcon } from '@primer/octicons-react'
 import { CapacityBar } from './CapacityBar'
 import { usePlannerStore } from '../../store/plannerStore'
 import { useUiStore } from '../../store/uiStore'
+import { groupRunsByRoute, type GroupableRun } from '../../lib/runGrouping'
 import type { RouteWithStops, StopConfig, Conflict, RunWithDetails } from '../../../shared/types'
 
 type TableRow = { key: string; stopNames: string; boysBus: string; girlsBus: string }
 
 function buildTableRows(details: RunWithDetails[], shiftId?: string | null): TableRow[] {
   const filtered = shiftId ? details.filter((r) => r.shift_id === shiftId) : details
-  // group stops by (boysBus, girlsBus) combo key
-  const groupMap = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
-  for (const run of filtered) {
-    const busNum = run.bus?.number ?? '—'
-    // determine combo key after merging with existing entry for this run's stops
-    for (const rs of run.stops) {
-      // find or create a group that matches this stop's current assignment
-      // We key groups by route+gender so stops in same route share a group
-      const groupKey = run.route_id + '|' + (run.gender === 'BOYS' ? 'B' : run.gender === 'GIRLS' ? 'G' : 'M')
-      if (!groupMap.has(groupKey)) groupMap.set(groupKey, { stops: new Map(), boysBus: '', girlsBus: '' })
-      const g = groupMap.get(groupKey)!
-      if (run.gender === 'BOYS' || run.gender === 'MIXED') g.boysBus = busNum
-      if (run.gender === 'GIRLS' || run.gender === 'MIXED') g.girlsBus = busNum
-      if (!g.stops.has(rs.stop_id)) g.stops.set(rs.stop_id, { name: rs.stop?.name ?? rs.stop_id, seq: rs.stop?.sequence_order ?? rs.sequence_order })
-    }
-  }
-  // merge groups with same route (combine boys+girls into one row per route)
-  const routeMerge = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
-  for (const [groupKey, g] of groupMap) {
-    const routeId = groupKey.split('|')[0]
-    if (!routeMerge.has(routeId)) routeMerge.set(routeId, { stops: new Map(), boysBus: '', girlsBus: '' })
-    const m = routeMerge.get(routeId)!
-    if (g.boysBus) m.boysBus = g.boysBus
-    if (g.girlsBus) m.girlsBus = g.girlsBus
-    for (const [id, s] of g.stops) if (!m.stops.has(id)) m.stops.set(id, s)
-  }
-  const rows: TableRow[] = []
-  for (const [routeId, m] of routeMerge) {
-    const names = [...m.stops.values()].sort((a, b) => a.seq - b.seq).map((s) => s.name).join(', ')
-    rows.push({ key: routeId, stopNames: names, boysBus: m.boysBus, girlsBus: m.girlsBus })
-  }
+  const groupable: GroupableRun[] = filtered.map((run) => ({
+    route_id: run.route_id,
+    route_name: run.route?.name ?? run.route_id,
+    route_color: run.route?.color ?? '#6b7280',
+    gender: run.gender,
+    bus_number: run.bus?.number ?? '—',
+    stops: run.stops.map((rs) => ({
+      stop_id: rs.stop_id,
+      stop_name: rs.stop?.name ?? rs.stop_id,
+      sequence_order: rs.stop?.sequence_order ?? rs.sequence_order
+    }))
+  }))
+  const groups = groupRunsByRoute(groupable)
+  const rows: TableRow[] = groups.map((g) => ({
+    key: g.key,
+    stopNames: g.stopNames.join(', '),
+    boysBus: g.boysBus ?? '',
+    girlsBus: g.girlsBus ?? ''
+  }))
   return rows.sort((a, b) => a.stopNames.localeCompare(b.stopNames))
 }
 
@@ -105,7 +94,10 @@ export function ManualPlanTab({
     .filter((s) => selectedStopIds.includes(s.id))
     .reduce((sum, stop) => {
       const cfg = stopConfigs.find((c) => c.stop_id === stop.id)
-      return sum + (cfg ? cfg.planned_boys + cfg.planned_girls : 0)
+      if (!cfg) return sum
+      if (selectedGender === 'BOYS') return sum + cfg.planned_boys
+      if (selectedGender === 'GIRLS') return sum + cfg.planned_girls
+      return sum + cfg.planned_boys + cfg.planned_girls
     }, 0) ?? 0
 
   const activeBuses = buses.filter((b) => b.status === 'ACTIVE')
@@ -221,7 +213,7 @@ export function ManualPlanTab({
             <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block', mb: 2 }}>4. Select Route</Text>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {activeRoutes.map((route) => {
-                const isRouteInUse = runs.some((r) => r.route_id === route.id && r.shift_id === selectedShift?.id)
+                const isRouteInUse = runs.some((r) => r.route_id === route.id && r.shift_id === selectedShift?.id && (r.gender === 'MIXED' || r.gender === selectedGender))
                 return (
                   <button
                     key={route.id}

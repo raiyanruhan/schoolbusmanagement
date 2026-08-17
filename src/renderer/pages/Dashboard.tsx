@@ -4,7 +4,8 @@ import { Bus, MapPin, Users, Activity, ArrowRight, Settings, Monitor, AlertTrian
 import { Button, Heading, Text, Flash, IconButton, ActionMenu, ActionList } from '@primer/react'
 import { useSessionStore } from '../store/sessionStore'
 import AnnouncementPlayer from '../components/audio/AnnouncementPlayer'
-import type { SystemHealth, AnnouncementGroup, Shift } from '../../shared/types'
+import Modal from '../components/ui/Modal'
+import type { SystemHealth, AnnouncementGroup, Shift, RunDirection } from '../../shared/types'
 
 type PlayOption = {
   label: string
@@ -19,6 +20,11 @@ export default function Dashboard() {
   const [announcements, setAnnouncements] = useState<AnnouncementGroup[]>([])
   const [selectedOption, setSelectedOption] = useState<PlayOption | null>(null)
   const [shifts, setShifts] = useState<Shift[]>([])
+  const [displayPickerOpen, setDisplayPickerOpen] = useState(false)
+  const [displayShiftId, setDisplayShiftId] = useState<string | null>(null)
+  const [displayDirection, setDisplayDirection] = useState<RunDirection>(
+    () => (new Date().getHours() < 12 ? 'INBOUND' : 'OUTBOUND')
+  )
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [menuWidth, setMenuWidth] = useState<number | undefined>(undefined)
@@ -40,7 +46,11 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadData() {
       const shiftRes = await window.api.shift.getAll()
-      if (shiftRes.success) setShifts(shiftRes.data)
+      if (shiftRes.success) {
+        const activeShifts = shiftRes.data.filter((s) => s.is_active)
+        setShifts(activeShifts)
+        setDisplayShiftId((prev) => prev ?? activeShifts[0]?.id ?? null)
+      }
 
       const sessionRes = await window.api.session.getOrCreateToday()
       if (!sessionRes.success) return
@@ -49,6 +59,12 @@ export default function Dashboard() {
     }
     loadData()
   }, [])
+
+  const handleOpenDisplay = () => {
+    if (!displayShiftId) return
+    window.api.window.openDisplay({ shift_id: displayShiftId, direction: displayDirection })
+    setDisplayPickerOpen(false)
+  }
 
   useEffect(() => {
     if (wrapperRef.current) setMenuWidth(wrapperRef.current.offsetWidth)
@@ -200,7 +216,7 @@ export default function Dashboard() {
         </Button>
 
         <button
-          onClick={() => window.api.window.openDisplay()}
+          onClick={() => setDisplayPickerOpen(true)}
           style={{
             width: '100%', background: 'var(--bgColor-emphasis)', color: 'var(--fgColor-onEmphasis)',
             border: 'none', borderRadius: 8, padding: '12px 16px',
@@ -235,6 +251,47 @@ export default function Dashboard() {
           </div>
         </button>
       </div>
+
+      <Modal open={displayPickerOpen} onClose={() => setDisplayPickerOpen(false)} title="Open Display Board" size="sm">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Text sx={{ fontSize: 0, color: 'fg.muted' }}>
+            This opens a separate, read-only window meant for a public screen — pick what it should show. It won't have any controls of its own.
+          </Text>
+
+          <div>
+            <Text sx={{ fontSize: 0, fontWeight: 'semibold', color: 'fg.muted', display: 'block', mb: 2 }}>Shift</Text>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {shifts.map((shift) => (
+                <Button
+                  key={shift.id}
+                  size="small"
+                  variant={displayShiftId === shift.id ? 'primary' : 'default'}
+                  onClick={() => setDisplayShiftId(shift.id)}
+                >
+                  {shift.name}
+                </Button>
+              ))}
+              {shifts.length === 0 && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>No active shifts configured</Text>}
+            </div>
+          </div>
+
+          <div>
+            <Text sx={{ fontSize: 0, fontWeight: 'semibold', color: 'fg.muted', display: 'block', mb: 2 }}>Direction</Text>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Button size="small" variant={displayDirection === 'INBOUND' ? 'primary' : 'default'} onClick={() => setDisplayDirection('INBOUND')} sx={{ flex: 1 }}>
+                Inbound (to School)
+              </Button>
+              <Button size="small" variant={displayDirection === 'OUTBOUND' ? 'primary' : 'default'} onClick={() => setDisplayDirection('OUTBOUND')} sx={{ flex: 1 }}>
+                Outbound (Home)
+              </Button>
+            </div>
+          </div>
+
+          <Button variant="primary" disabled={!displayShiftId} onClick={handleOpenDisplay} sx={{ width: '100%' }}>
+            Open Display Board
+          </Button>
+        </div>
+      </Modal>
 
     </div>
   )

@@ -4,6 +4,7 @@ import { Button, Text, Heading, Flash, Spinner } from '@primer/react'
 import ConfirmDialog from '../ui/ConfirmDialog'
 import { ProposedRunCard } from './ProposedRunCard'
 import { useUiStore } from '../../store/uiStore'
+import { groupRunsByRoute, type GroupableRun } from '../../lib/runGrouping'
 import type { Bus, Shift, Run, EngineOutput, AssignmentStrategy, RunDirection, ProposedRun, RunWithDetails, StrategyComparisonEntry } from '../../../shared/types'
 
 const STRATEGY_LABELS: Record<AssignmentStrategy, string> = {
@@ -15,33 +16,21 @@ const STRATEGY_LABELS: Record<AssignmentStrategy, string> = {
 type TableRow = { key: string; stopNames: string; boysBus: string; girlsBus: string }
 
 function buildProposedTableRows(proposedRuns: ProposedRun[]): TableRow[] {
-  const groupMap = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
-  for (const run of proposedRuns) {
-    const busNum = run.bus_number ?? '—'
-    let i = 0
-    for (const rs of run.stops) {
-      const groupKey = run.route_id + '|' + (run.gender === 'BOYS' ? 'B' : run.gender === 'GIRLS' ? 'G' : 'M')
-      if (!groupMap.has(groupKey)) groupMap.set(groupKey, { stops: new Map(), boysBus: '', girlsBus: '' })
-      const g = groupMap.get(groupKey)!
-      if (run.gender === 'BOYS' || run.gender === 'MIXED') g.boysBus = busNum
-      if (run.gender === 'GIRLS' || run.gender === 'MIXED') g.girlsBus = busNum
-      if (!g.stops.has(rs.stop_id)) g.stops.set(rs.stop_id, { name: rs.stop_name, seq: i++ })
-    }
-  }
-  const routeMerge = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
-  for (const [groupKey, g] of groupMap) {
-    const routeId = groupKey.split('|')[0]
-    if (!routeMerge.has(routeId)) routeMerge.set(routeId, { stops: new Map(), boysBus: '', girlsBus: '' })
-    const m = routeMerge.get(routeId)!
-    if (g.boysBus) m.boysBus = g.boysBus
-    if (g.girlsBus) m.girlsBus = g.girlsBus
-    for (const [id, s] of g.stops) if (!m.stops.has(id)) m.stops.set(id, s)
-  }
-  const rows: TableRow[] = []
-  for (const [routeId, m] of routeMerge) {
-    const names = [...m.stops.values()].sort((a, b) => a.seq - b.seq).map((s) => s.name).join(', ')
-    rows.push({ key: routeId, stopNames: names, boysBus: m.boysBus, girlsBus: m.girlsBus })
-  }
+  const groupable: GroupableRun[] = proposedRuns.map((run) => ({
+    route_id: run.route_id,
+    route_name: run.route_name,
+    route_color: run.route_color,
+    gender: run.gender,
+    bus_number: run.bus_number ?? '—',
+    stops: run.stops.map((rs, i) => ({ stop_id: rs.stop_id, stop_name: rs.stop_name, sequence_order: i }))
+  }))
+  const groups = groupRunsByRoute(groupable)
+  const rows: TableRow[] = groups.map((g) => ({
+    key: g.key,
+    stopNames: g.stopNames.join(', '),
+    boysBus: g.boysBus ?? '',
+    girlsBus: g.girlsBus ?? ''
+  }))
   return rows.sort((a, b) => a.stopNames.localeCompare(b.stopNames))
 }
 
@@ -78,32 +67,25 @@ export function AutoPlanTab({
 
   function buildTableRows(details: RunWithDetails[], shiftId?: string | null): TableRow[] {
     const filtered = shiftId ? details.filter((r) => r.shift_id === shiftId) : details
-    const groupMap = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
-    for (const run of filtered) {
-      const busNum = run.bus?.number ?? '—'
-      for (const rs of run.stops) {
-        const groupKey = run.route_id + '|' + (run.gender === 'BOYS' ? 'B' : run.gender === 'GIRLS' ? 'G' : 'M')
-        if (!groupMap.has(groupKey)) groupMap.set(groupKey, { stops: new Map(), boysBus: '', girlsBus: '' })
-        const g = groupMap.get(groupKey)!
-        if (run.gender === 'BOYS' || run.gender === 'MIXED') g.boysBus = busNum
-        if (run.gender === 'GIRLS' || run.gender === 'MIXED') g.girlsBus = busNum
-        if (!g.stops.has(rs.stop_id)) g.stops.set(rs.stop_id, { name: rs.stop?.name ?? rs.stop_id, seq: rs.stop?.sequence_order ?? rs.sequence_order })
-      }
-    }
-    const routeMerge = new Map<string, { stops: Map<string, { name: string; seq: number }>; boysBus: string; girlsBus: string }>()
-    for (const [groupKey, g] of groupMap) {
-      const routeId = groupKey.split('|')[0]
-      if (!routeMerge.has(routeId)) routeMerge.set(routeId, { stops: new Map(), boysBus: '', girlsBus: '' })
-      const m = routeMerge.get(routeId)!
-      if (g.boysBus) m.boysBus = g.boysBus
-      if (g.girlsBus) m.girlsBus = g.girlsBus
-      for (const [id, s] of g.stops) if (!m.stops.has(id)) m.stops.set(id, s)
-    }
-    const rows: TableRow[] = []
-    for (const [routeId, m] of routeMerge) {
-      const names = [...m.stops.values()].sort((a, b) => a.seq - b.seq).map((s) => s.name).join(', ')
-      rows.push({ key: routeId, stopNames: names, boysBus: m.boysBus, girlsBus: m.girlsBus })
-    }
+    const groupable: GroupableRun[] = filtered.map((run) => ({
+      route_id: run.route_id,
+      route_name: run.route?.name ?? run.route_id,
+      route_color: run.route?.color ?? '#6b7280',
+      gender: run.gender,
+      bus_number: run.bus?.number ?? '—',
+      stops: run.stops.map((rs) => ({
+        stop_id: rs.stop_id,
+        stop_name: rs.stop?.name ?? rs.stop_id,
+        sequence_order: rs.stop?.sequence_order ?? rs.sequence_order
+      }))
+    }))
+    const groups = groupRunsByRoute(groupable)
+    const rows: TableRow[] = groups.map((g) => ({
+      key: g.key,
+      stopNames: g.stopNames.join(', '),
+      boysBus: g.boysBus ?? '',
+      girlsBus: g.girlsBus ?? ''
+    }))
     return rows.sort((a, b) => a.stopNames.localeCompare(b.stopNames))
   }
 

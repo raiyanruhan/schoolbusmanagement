@@ -1,7 +1,9 @@
-import { useEffect, useState, useCallback } from 'react'
-import type { RunWithDetails, Shift } from '../../shared/types'
-import { Bus as BusIcon, RefreshCw, AlertCircle } from 'lucide-react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import type { RunWithDetails, RunDirection } from '../../shared/types'
+import { Bus as BusIcon, AlertCircle } from 'lucide-react'
 import { Text, Button, Spinner } from '@primer/react'
+import { groupRunsByRoute, type GroupableRun } from '../lib/runGrouping'
 
 const REFRESH_INTERVAL = 30_000
 
@@ -14,68 +16,48 @@ type DisplayRow = {
   girlsBuses: string
 }
 
+function toGroupable(details: RunWithDetails[]): GroupableRun[] {
+  return details.map((run) => ({
+    route_id: run.route_id,
+    route_name: run.route?.name ?? run.route_id,
+    route_color: run.route?.color ?? '#6b7280',
+    gender: run.gender,
+    bus_number: run.bus?.number ?? '—',
+    stops: run.stops.map((rs) => ({
+      stop_id: rs.stop_id,
+      stop_name: rs.stop?.name ?? rs.stop_id,
+      sequence_order: rs.stop?.sequence_order ?? rs.sequence_order
+    }))
+  }))
+}
+
 function buildRows(details: RunWithDetails[]): DisplayRow[] {
-  const routeMap = new Map<string, {
-    routeName: string
-    routeColor: string
-    stops: Map<string, { name: string; seq: number }>
-    boysBuses: Set<string>
-    girlsBuses: Set<string>
-  }>()
-
-  for (const run of details) {
-    const busNum = run.bus?.number ?? '—'
-    const routeId = run.route_id
-
-    if (!routeMap.has(routeId)) {
-      routeMap.set(routeId, {
-        routeName: run.route?.name ?? routeId,
-        routeColor: run.route?.color ?? '#6b7280',
-        stops: new Map(),
-        boysBuses: new Set(),
-        girlsBuses: new Set()
-      })
-    }
-
-    const entry = routeMap.get(routeId)!
-
-    if (run.gender === 'BOYS' || run.gender === 'MIXED') entry.boysBuses.add(busNum)
-    if (run.gender === 'GIRLS' || run.gender === 'MIXED') entry.girlsBuses.add(busNum)
-
-    for (const rs of run.stops) {
-      if (!entry.stops.has(rs.stop_id)) {
-        entry.stops.set(rs.stop_id, {
-          name: rs.stop?.name ?? rs.stop_id,
-          seq: rs.stop?.sequence_order ?? rs.sequence_order
-        })
-      }
-    }
-  }
-
-  const rows: DisplayRow[] = []
-  for (const [routeId, entry] of routeMap) {
-    const sortedStops = [...entry.stops.values()]
-      .sort((a, b) => a.seq - b.seq)
-      .map((s) => s.name)
-
-    rows.push({
-      key: routeId,
-      routeName: entry.routeName,
-      routeColor: entry.routeColor,
-      stops: sortedStops,
-      boysBuses: [...entry.boysBuses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join(', '),
-      girlsBuses: [...entry.girlsBuses].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).join(', ')
-    })
-  }
-
-  rows.sort((a, b) => a.routeName.localeCompare(b.routeName))
+  const groups = groupRunsByRoute(toGroupable(details))
+  const rows: DisplayRow[] = groups.map((g) => ({
+    key: g.key,
+    routeName: g.route_name,
+    routeColor: g.route_color,
+    stops: g.stopNames,
+    boysBuses: g.boysBus ?? '',
+    girlsBuses: g.girlsBus ?? ''
+  }))
+  rows.sort((a, b) => a.routeName.localeCompare(b.routeName) || a.stops[0]?.localeCompare(b.stops[0] ?? '') || 0)
   return rows
 }
 
+/**
+ * Public kiosk screen — no controls, no navigation, nothing an onlooker
+ * could tap. Which shift/direction to show is decided in the main app and
+ * passed in as launch params (?shift=<id>&direction=<INBOUND|OUTBOUND>)
+ * when this window is opened; this page only ever renders what it's told.
+ */
 export default function DisplayBoard() {
+  const [searchParams] = useSearchParams()
+  const shiftId = searchParams.get('shift')
+  const direction = (searchParams.get('direction') as RunDirection | null) ?? 'OUTBOUND'
+
   const [details, setDetails] = useState<RunWithDetails[]>([])
-  const [shifts, setShifts] = useState<Shift[]>([])
-  const [countdown, setCountdown] = useState(REFRESH_INTERVAL / 1000)
+  const [shiftName, setShiftName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -92,7 +74,9 @@ export default function DisplayBoard() {
         setLoading(false)
         return
       }
-      if (shiftRes.success) setShifts(shiftRes.data)
+      if (shiftRes.success) {
+        setShiftName(shiftRes.data.find((s) => s.id === shiftId)?.name ?? null)
+      }
 
       const runsRes = await window.api.planner.getAllRunsWithDetails(sessionRes.data.id)
       if (runsRes.success) setDetails(runsRes.data)
@@ -101,8 +85,7 @@ export default function DisplayBoard() {
       setError(String(e))
     }
     setLoading(false)
-    setCountdown(REFRESH_INTERVAL / 1000)
-  }, [])
+  }, [shiftId])
 
   useEffect(() => {
     load()
@@ -110,18 +93,25 @@ export default function DisplayBoard() {
     return () => clearInterval(interval)
   }, [load])
 
-  useEffect(() => {
-    const tick = setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000)
-    return () => clearInterval(tick)
-  }, [])
-
-  const rows = buildRows(details)
+  const filteredDetails = useMemo(
+    () => details.filter((r) => r.shift_id === shiftId && r.direction === direction),
+    [details, shiftId, direction]
+  )
+  const rows = buildRows(filteredDetails)
 
   // DisplayBoard is always dark — use hardcoded dark colors since this is a kiosk view
   return (
     <div style={{ height: '100vh', background: '#0d1117', color: '#e6edf3', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {error ? (
+        {!shiftId ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8 }}>
+            <AlertCircle size={40} style={{ color: '#f85149' }} />
+            <Text style={{ fontSize: 14, fontWeight: 600, color: '#f85149' }}>No board selected</Text>
+            <Text style={{ fontSize: 12, color: '#8b949e', maxWidth: 384, textAlign: 'center' }}>
+              Open this from the app's dashboard — pick a shift and direction there first.
+            </Text>
+          </div>
+        ) : error ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8 }}>
             <AlertCircle size={40} style={{ color: '#f85149' }} />
             <Text style={{ fontSize: 14, fontWeight: 600, color: '#f85149' }}>Failed to load</Text>
@@ -134,6 +124,13 @@ export default function DisplayBoard() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#8b949e' }}>
             <Spinner size="medium" />
             <Text style={{ fontSize: 14 }}>Loading...</Text>
+          </div>
+        ) : rows.length === 0 && details.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#8b949e' }}>
+            <BusIcon size={48} />
+            <Text style={{ fontSize: 16, fontWeight: 500, color: '#c9d1d9' }}>
+              No {direction === 'INBOUND' ? 'inbound' : 'outbound'} runs planned for {shiftName ?? 'this shift'} yet.
+            </Text>
           </div>
         ) : rows.length === 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#8b949e' }}>
@@ -162,13 +159,13 @@ export default function DisplayBoard() {
                   </td>
                   <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {row.boysBuses
-                      ? <span style={{ color: '#93c5fd', fontSize: row.boysBuses.includes(',') ? 12 : 14 }}>{row.boysBuses}</span>
+                      ? <span style={{ color: '#93c5fd', fontSize: 14 }}>{row.boysBuses}</span>
                       : <span style={{ color: '#374151', fontSize: 14 }}>—</span>
                     }
                   </td>
                   <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {row.girlsBuses
-                      ? <span style={{ color: '#f9a8d4', fontSize: row.girlsBuses.includes(',') ? 12 : 14 }}>{row.girlsBuses}</span>
+                      ? <span style={{ color: '#f9a8d4', fontSize: 14 }}>{row.girlsBuses}</span>
                       : <span style={{ color: '#374151', fontSize: 14 }}>—</span>
                     }
                   </td>
