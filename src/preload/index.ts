@@ -9,7 +9,7 @@ import type {
   CreateShiftInput, UpdateShiftInput, UpsertStopConfigInput,
   CreateRunInput,
   RunDirection, AssignmentStrategy,
-  EngineOutput, ProposedRun,
+  EngineOutput, ProposedRun, BestPlanResult,
   Incident, AuditLog, Conflict, SystemHealth, CreateIncidentInput
 } from '../shared/types'
 
@@ -101,6 +101,12 @@ const api = {
       strategy: AssignmentStrategy
     }): Promise<IpcResult<EngineOutput>> =>
       ipcRenderer.invoke('autoPlanner:generate', input),
+    generateBest: (input: {
+      session_id: string
+      shift_id: string
+      direction: RunDirection
+    }): Promise<IpcResult<BestPlanResult>> =>
+      ipcRenderer.invoke('autoPlanner:generateBest', input),
     approve: (input: {
       session_id: string
       shift_id: string

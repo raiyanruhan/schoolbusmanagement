@@ -353,3 +353,19 @@ export interface EngineOutput {
   warnings: EngineWarning[]
   summary: EngineSummary
 }
+
+export interface StrategyComparisonEntry {
+  strategy: AssignmentStrategy
+  totalBusesUsed: number
+  totalStudentsUnassigned: number
+  splitRoutes: number
+  overloadedRuns: number
+  utilization: number
+  output: EngineOutput
+}
+
+export interface BestPlanResult {
+  output: EngineOutput
+  strategyUsed: AssignmentStrategy
+  comparison: StrategyComparisonEntry[]
+}
