@@ -78,38 +78,10 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
     const { selectedStopIds, selectedRoute } = get()
     if (!selectedRoute) return
 
-    const stops = selectedRoute.stops.filter((s) => s.is_active)
-    const stopIndex = stops.findIndex((s) => s.id === stopId)
-
     if (selectedStopIds.includes(stopId)) {
-      // Deselect — remove and trim to maintain contiguity
-      const newIds = selectedStopIds.filter((id) => id !== stopId)
-      // If this was start or end, keep inner ones; if middle, split — just clear
-      const indices = newIds.map((id) => stops.findIndex((s) => s.id === id)).sort((a, b) => a - b)
-      let contiguous = true
-      for (let i = 1; i < indices.length; i++) {
-        if (indices[i] !== indices[i - 1] + 1) { contiguous = false; break }
-      }
-      set({ selectedStopIds: contiguous ? newIds : [] })
+      set({ selectedStopIds: selectedStopIds.filter((id) => id !== stopId) })
     } else {
-      if (selectedStopIds.length === 0) {
-        set({ selectedStopIds: [stopId] })
-      } else {
-        // Extend selection only if adjacent
-        const currentIndices = selectedStopIds
-          .map((id) => stops.findIndex((s) => s.id === id))
-          .sort((a, b) => a - b)
-        const min = currentIndices[0]
-        const max = currentIndices[currentIndices.length - 1]
-
-        if (stopIndex === min - 1 || stopIndex === max + 1) {
-          const newIds = [...selectedStopIds, stopId]
-          set({ selectedStopIds: newIds })
-        } else {
-          // Non-adjacent: start fresh from this stop
-          set({ selectedStopIds: [stopId] })
-        }
-      }
+      set({ selectedStopIds: [...selectedStopIds, stopId] })
     }
   },
 

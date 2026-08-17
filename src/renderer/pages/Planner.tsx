@@ -61,7 +61,7 @@ export default function Planner() {
         backLabel="Home"
         title={`Planner (${session.date})`}
         right={
-          activeTab === 'manual' && shiftRuns.length > 0 ? (
+          shiftRuns.length > 0 ? (
             <Button variant="danger" size="small" leadingVisual={Trash2} onClick={() => setClearConfirm(true)}>
               Clear Shift Plan
             </Button>

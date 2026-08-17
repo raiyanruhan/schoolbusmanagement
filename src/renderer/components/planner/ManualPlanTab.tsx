@@ -119,6 +119,7 @@ export function ManualPlanTab({
         id: bus.id,
         text: `Bus ${bus.number}`,
         description: `${bus.capacity} seats${inUse ? ' · In use' : ''}`,
+        sx: inUse ? { opacity: 0.5 } : {},
       }
     }),
     [activeBuses, runs, selectedShift?.id]
@@ -129,6 +130,7 @@ export function ManualPlanTab({
     : busItems
 
   const selectedBusItem = busItems.find((item) => (item as SelectPanelItemInput & { id: string }).id === selectedBus?.id)
+  const isSelectedBusInUse = selectedBus && runs.some(r => r.bus_id === selectedBus.id && r.shift_id === selectedShift?.id)
 
   return (
     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
@@ -199,9 +201,14 @@ export function ManualPlanTab({
                 <Button
                   {...anchorProps}
                   trailingAction={TriangleDownIcon}
-                  sx={{ width: '100%', justifyContent: 'space-between' }}
+                  sx={{ 
+                    width: '100%', 
+                    justifyContent: 'space-between',
+                    opacity: isSelectedBusInUse ? 0.6 : 1,
+                    bg: isSelectedBusInUse ? 'var(--bgColor-muted)' : undefined,
+                  }}
                 >
-                  {selectedBus ? `Bus ${selectedBus.number} (${selectedBus.capacity} seats)` : 'Pick a bus'}
+                  {selectedBus ? `Bus ${selectedBus.number} (${selectedBus.capacity} seats)${isSelectedBusInUse ? ' - In Use' : ''}` : 'Pick a bus'}
                 </Button>
               )}
               height="medium"
@@ -213,17 +220,35 @@ export function ManualPlanTab({
           <div style={{ padding: 16 }}>
             <Text sx={{ fontSize: 1, fontWeight: 'semibold', display: 'block', mb: 2 }}>4. Select Route</Text>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {activeRoutes.map((route) => (
-                <button
-                  key={route.id}
-                  onClick={() => setSelectedRoute(selectedRoute?.id === route.id ? null : (route as RouteWithStops))}
-                  className="hov-bg-subtle"
-                  style={{ textAlign: 'left', padding: '8px 12px', borderRadius: 6, fontSize: 14, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: selectedRoute?.id === route.id ? 'var(--bgColor-accent-muted)' : 'transparent', color: selectedRoute?.id === route.id ? 'var(--fgColor-accent)' : 'var(--fgColor-default)', fontWeight: selectedRoute?.id === route.id ? 600 : 400 }}
-                >
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: route.color }} />
-                  {route.name}
-                </button>
-              ))}
+              {activeRoutes.map((route) => {
+                const isRouteInUse = runs.some((r) => r.route_id === route.id && r.shift_id === selectedShift?.id)
+                return (
+                  <button
+                    key={route.id}
+                    onClick={() => setSelectedRoute(selectedRoute?.id === route.id ? null : (route as RouteWithStops))}
+                    className="hov-bg-subtle"
+                    style={{ 
+                      textAlign: 'left', 
+                      padding: '8px 12px', 
+                      borderRadius: 6, 
+                      fontSize: 14, 
+                      border: 'none', 
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 8, 
+                      background: selectedRoute?.id === route.id ? 'var(--bgColor-accent-muted)' : 'transparent', 
+                      color: selectedRoute?.id === route.id ? 'var(--fgColor-accent)' : 'var(--fgColor-default)', 
+                      fontWeight: selectedRoute?.id === route.id ? 600 : 400,
+                      opacity: isRouteInUse && selectedRoute?.id !== route.id ? 0.5 : 1
+                    }}
+                  >
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: route.color }} />
+                    <span style={{ flex: 1, textDecoration: isRouteInUse ? 'line-through' : 'none' }}>{route.name}</span>
+                    {isRouteInUse && <CheckCircle2 size={14} style={{ color: 'var(--fgColor-success)' }} />}
+                  </button>
+                )
+              })}
               {activeRoutes.length === 0 && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>No active routes</Text>}
             </div>
           </div>
