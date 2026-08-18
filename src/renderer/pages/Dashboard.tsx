@@ -139,7 +139,6 @@ export default function Dashboard() {
       {health && health.level === 'GREEN' && (
         <div style={{ margin: '8px 32px 0' }}>
           <Flash variant="success" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <CheckCircle size={14} />
             <Text sx={{ fontSize: 0, fontWeight: 'medium' }}>All systems operational</Text>
           </Flash>
         </div>
