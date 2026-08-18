@@ -38,8 +38,21 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
   const globalWarnings: EngineWarning[] = []
 
   // 1. Available bus pool — sorted descending by capacity (for best-fit reference)
-  let busPool: Bus[] = getAvailableBuses(buses, existingRuns, config.shift_id, config.direction)
-    .sort((a, b) => b.capacity - a.capacity)
+  let busPool: Bus[] = getAvailableBuses(
+    buses,
+    existingRuns,
+    config.shift_id,
+    config.direction,
+    config.crossShiftBusyBusIds
+  ).sort((a, b) => b.capacity - a.capacity)
+
+  if (config.crossShiftBusyBusIds && config.crossShiftBusyBusIds.size > 0) {
+    globalWarnings.push({
+      type: 'CROSS_SHIFT_BUSY',
+      severity: 'WARNING',
+      message: `${config.crossShiftBusyBusIds.size} bus${config.crossShiftBusyBusIds.size !== 1 ? 'es are' : ' is'} held back — already committed to another shift with a conflicting or too-tight turnaround window today.`
+    })
+  }
 
   // Reference capacity = largest available bus (most optimistic split for fewest segments)
   const refCapacity = busPool[0]?.capacity ?? 40

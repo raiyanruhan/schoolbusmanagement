@@ -5,6 +5,7 @@ import { shiftRepo } from '../repositories/shiftRepo'
 import { runRepo } from '../repositories/runRepo'
 import { runAssignmentEngine } from '../engine/assignmentEngine'
 import { parseTimeToDate } from '../engine/timeCalculator'
+import { computeShiftWindow, windowsConflict } from '../engine/shiftWindow'
 import type { IpcResult, Run } from '../../shared/types'
 import type { EngineOutput, EngineInput, AssignmentStrategy, StopWithCount, TimeConfig } from '../engine/types'
 
@@ -106,8 +107,30 @@ function buildEngineInputBase(input: {
   const allSessionRuns = runRepo.getRunsBySession(input.session_id)
   const existingRuns = allSessionRuns.filter((r) => r.shift_id === input.shift_id)
 
-  // Build time_config from shift timing fields (if available)
   const today = new Date()
+
+  // The fleet is shared across shifts (not one bus per shift) — find buses
+  // already committed to a DIFFERENT shift today whose real clock-time window
+  // conflicts with this shift+direction's window, so the engine won't
+  // double-book a bus into two places at once.
+  const allShifts = shiftRepo.getAll()
+  const shiftById = new Map(allShifts.map((s) => [s.id, s]))
+  const targetWindow = computeShiftWindow(shift, input.direction, today)
+
+  const crossShiftBusyBusIds = new Set<string>()
+  if (targetWindow) {
+    for (const run of allSessionRuns) {
+      if (run.shift_id === input.shift_id && run.direction === input.direction) continue
+      const otherShift = shiftById.get(run.shift_id)
+      if (!otherShift) continue
+      const runWindow = computeShiftWindow(otherShift, run.direction, today)
+      if (runWindow && windowsConflict(targetWindow, runWindow)) {
+        crossShiftBusyBusIds.add(run.bus_id)
+      }
+    }
+  }
+
+  // Build time_config from shift timing fields (if available)
   let time_config: TimeConfig | undefined
 
   if (input.direction === 'OUTBOUND') {
@@ -142,7 +165,8 @@ function buildEngineInputBase(input: {
     gender_mode: shift.gender_mode,
     overload_limit: shift.default_overload,
     underfill_threshold: 5,
-    ...(time_config && { time_config })
+    ...(time_config && { time_config }),
+    ...(crossShiftBusyBusIds.size > 0 && { crossShiftBusyBusIds })
   }
 
   return { data: { buses: allBuses, engineRoutes, existingRuns, configBase } }

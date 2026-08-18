@@ -1,11 +1,15 @@
 // Pure conflict detection engine — no DB/UI imports, no side effects
-import type { RunWithDetails, Bus, Conflict } from '../../shared/types'
+import type { RunWithDetails, Bus, Conflict, Shift } from '../../shared/types'
+import { computeShiftWindow, windowsConflict } from './shiftWindow'
 
 export function detectConflicts(
   runs: RunWithDetails[],
-  buses: Bus[]
+  buses: Bus[],
+  shifts: Shift[] = []
 ): Conflict[] {
   const conflicts: Conflict[] = []
+  const shiftById = new Map(shifts.map((s) => [s.id, s]))
+  const today = new Date()
 
   const busMap = new Map<string, Bus>()
   for (const b of buses) busMap.set(b.id, b)
@@ -51,7 +55,7 @@ export function detectConflicts(
 
   for (const [busId, busRuns] of byBus) {
     const bus = busMap.get(busId)
-    // Group by same shift + same direction — that's a collision
+    // Same shift + same direction twice — definitely a collision
     const seen = new Map<string, string>()
     for (const run of busRuns) {
       const key = `${run.shift_id}__${run.direction}`
@@ -65,6 +69,35 @@ export function detectConflicts(
         })
       } else {
         seen.set(key, run.id)
+      }
+    }
+
+    // Fleet is shared across shifts — flag a bus double-booked into two
+    // DIFFERENT shifts whose real clock-time windows overlap (or leave too
+    // little turnaround), using each run's shift timing fields.
+    for (let i = 0; i < busRuns.length; i++) {
+      for (let j = i + 1; j < busRuns.length; j++) {
+        const a = busRuns[i]
+        const b = busRuns[j]
+        if (a.shift_id === b.shift_id) continue // same-shift dup already caught above
+
+        const shiftA = shiftById.get(a.shift_id)
+        const shiftB = shiftById.get(b.shift_id)
+        if (!shiftA || !shiftB) continue
+
+        const windowA = computeShiftWindow(shiftA, a.direction, today)
+        const windowB = computeShiftWindow(shiftB, b.direction, today)
+        if (!windowA || !windowB) continue
+
+        if (windowsConflict(windowA, windowB)) {
+          conflicts.push({
+            type: 'TIME_COLLISION',
+            severity: 'CRITICAL',
+            message: `Bus ${bus?.number ?? busId} is double-booked — assigned to "${shiftA.name}" and "${shiftB.name}" with overlapping or too-tight turnaround windows`,
+            run_id: a.id,
+            bus_id: busId
+          })
+        }
       }
     }
   }

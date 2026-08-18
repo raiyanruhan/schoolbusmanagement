@@ -3,7 +3,7 @@ import type { Bus, Run, RunDirection, RunGender, GenderMode } from '../../shared
 // ─── Engine-specific enums ────────────────────────────────────────────────────
 
 export type AssignmentStrategy = 'LARGEST_ROUTE_FIRST' | 'SMALLEST_ROUTE_FIRST' | 'SEQUENCE_ORDER'
-export type WarningType = 'OVERLOADED' | 'UNDERFILLED' | 'NO_AVAILABLE_BUS' | 'GENDER_MISMATCH' | 'TIME_EXCEEDED'
+export type WarningType = 'OVERLOADED' | 'UNDERFILLED' | 'NO_AVAILABLE_BUS' | 'GENDER_MISMATCH' | 'TIME_EXCEEDED' | 'CROSS_SHIFT_BUSY'
 
 // ─── Warning ──────────────────────────────────────────────────────────────────
 
@@ -102,6 +102,13 @@ export interface EngineConfig {
   underfill_threshold: number
   /** Optional time constraint enforcement */
   time_config?: TimeConfig
+  /**
+   * Bus IDs already committed to a run in a DIFFERENT shift today whose time
+   * window conflicts (overlaps, or too little turnaround) with this shift's
+   * window — computed by the caller from shift timing, kept out of the
+   * engine's pure route-splitting logic.
+   */
+  crossShiftBusyBusIds?: Set<string>
 }
 
 // ─── Full engine input ────────────────────────────────────────────────────────

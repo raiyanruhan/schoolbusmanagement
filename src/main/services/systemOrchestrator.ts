@@ -3,6 +3,7 @@
 import { incidentRepo } from '../repositories/incidentRepo'
 import { auditRepo } from '../repositories/auditRepo'
 import { runRepo } from '../repositories/runRepo'
+import { shiftRepo } from '../repositories/shiftRepo'
 import { getDb } from '../db'
 import { buses } from '../db/schema'
 import { detectConflicts } from '../engine/conflictDetector'
@@ -40,7 +41,8 @@ export const systemOrchestrator = {
     const db = getDb()
     const allRuns = runRepo.getAllRunsWithDetails(session_id) as RunWithDetails[]
     const allBuses = db.select().from(buses).all() as Bus[]
-    return detectConflicts(allRuns, allBuses)
+    const allShifts = shiftRepo.getAll()
+    return detectConflicts(allRuns, allBuses, allShifts)
   },
 
   /**
