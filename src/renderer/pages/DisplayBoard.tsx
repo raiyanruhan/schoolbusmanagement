@@ -98,6 +98,7 @@ export default function DisplayBoard() {
     [details, shiftId, direction]
   )
   const rows = buildRows(filteredDetails)
+  const combined = rows.length > 0 && rows.every((r) => r.boysBuses && r.boysBuses === r.girlsBuses)
 
   // DisplayBoard is always dark — use hardcoded dark colors since this is a kiosk view
   return (
@@ -144,8 +145,14 @@ export default function DisplayBoard() {
               <tr style={{ background: '#111827', position: 'sticky', top: 0, zIndex: 1 }}>
                 <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: 40 }}>#</th>
                 <th style={{ padding: '8px 20px', textAlign: 'left', fontSize: 11, color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stands</th>
-                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#93c5fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 110 }}>Boys</th>
-                <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#f9a8d4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 110 }}>Girls</th>
+                {combined ? (
+                  <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#93c5fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 110 }}>Bus</th>
+                ) : (
+                  <>
+                    <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#93c5fd', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 110 }}>Boys</th>
+                    <th style={{ padding: '8px 20px', textAlign: 'center', fontSize: 11, color: '#f9a8d4', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 110 }}>Girls</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -157,18 +164,26 @@ export default function DisplayBoard() {
                   <td style={{ padding: '11px 20px', lineHeight: 1.5 }}>
                     <span style={{ fontSize: 14, color: '#d1d5db' }}>{row.stops.join(', ')}</span>
                   </td>
-                  <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {row.boysBuses
-                      ? <span style={{ color: '#93c5fd', fontSize: 14 }}>{row.boysBuses}</span>
-                      : <span style={{ color: '#374151', fontSize: 14 }}>—</span>
-                    }
-                  </td>
-                  <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {row.girlsBuses
-                      ? <span style={{ color: '#f9a8d4', fontSize: 14 }}>{row.girlsBuses}</span>
-                      : <span style={{ color: '#374151', fontSize: 14 }}>—</span>
-                    }
-                  </td>
+                  {combined ? (
+                    <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                      <span style={{ color: '#93c5fd', fontSize: 14 }}>{row.boysBuses}</span>
+                    </td>
+                  ) : (
+                    <>
+                      <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        {row.boysBuses
+                          ? <span style={{ color: '#93c5fd', fontSize: 14 }}>{row.boysBuses}</span>
+                          : <span style={{ color: '#374151', fontSize: 14 }}>—</span>
+                        }
+                      </td>
+                      <td style={{ padding: '11px 20px', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        {row.girlsBuses
+                          ? <span style={{ color: '#f9a8d4', fontSize: 14 }}>{row.girlsBuses}</span>
+                          : <span style={{ color: '#374151', fontSize: 14 }}>—</span>
+                        }
+                      </td>
+                    </>
+                  )}
                 </tr>
               ))}
             </tbody>
