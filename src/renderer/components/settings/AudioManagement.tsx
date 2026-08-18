@@ -158,7 +158,17 @@ export default function AudioManagement() {
         {selected.kind === 'ROUTE' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <Panel title={selected.route.name} subtitle="Record the full stop list as one natural phrase, in stop order">
-              <AudioRecorder key={selectionKey(selected)} type="ROUTE" refId={selected.route.id} existingClip={routeClip(selected.route.id)} onSaved={handleSaved} />
+              <AudioRecorder
+                key={selectionKey(selected)}
+                type="ROUTE"
+                refId={selected.route.id}
+                existingClip={routeClip(selected.route.id)}
+                onSaved={handleSaved}
+                stopNames={selectedRouteStops?.stops
+                  .filter((s) => s.is_active)
+                  .sort((a, b) => a.sequence_order - b.sequence_order)
+                  .map((s) => s.name)}
+              />
             </Panel>
 
             {routeClip(selected.route.id) && selectedRouteStops && (

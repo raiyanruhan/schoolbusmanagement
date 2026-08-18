@@ -2,8 +2,11 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import WaveSurfer from 'wavesurfer.js'
 import RegionsPlugin from 'wavesurfer.js/plugins/regions'
 import type { Region } from 'wavesurfer.js/plugins/regions'
-import { Play, Pause, Save, MapPin, Trash2 } from 'lucide-react'
-import { Button, Text, Spinner } from '@primer/react'
+import HoverPlugin from 'wavesurfer.js/plugins/hover'
+import TimelinePlugin from 'wavesurfer.js/plugins/timeline'
+import ZoomPlugin from 'wavesurfer.js/plugins/zoom'
+import { Play, Pause, Save, MapPin, Trash2, ArrowLeftRight, MousePointerClick } from 'lucide-react'
+import { Button, Text, Spinner, Select } from '@primer/react'
 import { useUiStore } from '../../store/uiStore'
 
 interface StopMark {
@@ -13,7 +16,6 @@ interface StopMark {
 }
 
 const REGION_COLOR = 'rgba(59, 130, 246, 0.3)'
-const REGION_COLOR_ARMED = 'rgba(245, 158, 11, 0.35)'
 
 export default function RouteStopEditor({
   routeId, clipUrl, stops
@@ -24,24 +26,31 @@ export default function RouteStopEditor({
 }) {
   const { showToast } = useUiStore()
   const containerRef = useRef<HTMLDivElement>(null)
+  const timelineRef = useRef<HTMLDivElement>(null)
   const wsRef = useRef<WaveSurfer | null>(null)
   const regionsRef = useRef<RegionsPlugin | null>(null)
   const regionByStopRef = useRef<Map<string, Region>>(new Map())
 
   const [ready, setReady] = useState(false)
   const [playing, setPlaying] = useState(false)
-  const [armedStopId, setArmedStopId] = useState<string | null>(null)
   const [markedStopIds, setMarkedStopIds] = useState<Set<string>>(new Set())
   const [saving, setSaving] = useState(false)
+  const [reassigningStopId, setReassigningStopId] = useState<string | null>(null)
 
-  const armedStopIdRef = useRef<string | null>(null)
-  useEffect(() => { armedStopIdRef.current = armedStopId }, [armedStopId])
+  const sortedStops = [...stops].sort((a, b) => a.sequence_order - b.sequence_order)
+  const stopsRef = useRef(sortedStops)
+  stopsRef.current = sortedStops
 
   const refreshMarked = useCallback(() => {
     setMarkedStopIds(new Set(regionByStopRef.current.keys()))
   }, [])
 
-  // Init wavesurfer + regions plugin, load clip + existing timestamps
+  const labelRegion = useCallback((region: Region, stopId: string) => {
+    const stop = stopsRef.current.find((s) => s.stop_id === stopId)
+    region.setOptions({ color: REGION_COLOR, content: stop?.stop_name ?? '' })
+  }, [])
+
+  // Init wavesurfer + regions/timeline/hover/zoom plugins, load clip + existing timestamps
   useEffect(() => {
     if (!containerRef.current) return
     setReady(false)
@@ -51,9 +60,14 @@ export default function RouteStopEditor({
       container: containerRef.current,
       waveColor: 'var(--fgColor-muted)' as unknown as string,
       progressColor: 'var(--fgColor-accent)' as unknown as string,
-      height: 72,
+      height: 88,
       url: clipUrl,
-      cursorColor: 'var(--fgColor-default)' as unknown as string
+      cursorColor: 'var(--fgColor-default)' as unknown as string,
+      plugins: [
+        HoverPlugin.create({ labelBackground: 'var(--bgColor-emphasis)', labelColor: 'var(--fgColor-onEmphasis)' }),
+        TimelinePlugin.create({ container: timelineRef.current ?? undefined, height: 16 }),
+        ZoomPlugin.create({ scale: 0.5, maxZoom: 400 })
+      ]
     })
     wsRef.current = ws
     const regions = ws.registerPlugin(RegionsPlugin.create())
@@ -63,16 +77,19 @@ export default function RouteStopEditor({
     ws.on('pause', () => setPlaying(false))
     ws.on('finish', () => setPlaying(false))
 
+    // Dragging anywhere on empty waveform creates a region auto-assigned to
+    // the next unmarked stop in sequence order — no separate "arm" step.
     regions.on('region-created', (region) => {
-      const stopId = armedStopIdRef.current
-      if (!stopId) { region.remove(); return }
-      const stop = stops.find((s) => s.stop_id === stopId)
-      region.setOptions({ color: REGION_COLOR, content: stop?.stop_name ?? '' })
-      const prior = regionByStopRef.current.get(stopId)
-      if (prior && prior !== region) prior.remove()
-      regionByStopRef.current.set(stopId, region)
+      const unmarked = stopsRef.current.filter((s) => !regionByStopRef.current.has(s.stop_id))
+      const next = unmarked[0]
+      if (!next) {
+        region.remove()
+        showToast('All stops are already marked — clear one first to re-mark it', 'error')
+        return
+      }
+      labelRegion(region, next.stop_id)
+      regionByStopRef.current.set(next.stop_id, region)
       refreshMarked()
-      setArmedStopId(null)
     })
 
     ws.on('ready', async () => {
@@ -81,7 +98,7 @@ export default function RouteStopEditor({
       const result = await window.api.audio.getStopTimestamps(routeId)
       if (result.success) {
         for (const t of result.data) {
-          const stop = stops.find((s) => s.stop_id === t.stop_id)
+          const stop = stopsRef.current.find((s) => s.stop_id === t.stop_id)
           if (!stop || durationMs === 0) continue
           const region = regions.addRegion({
             start: t.start_ms / 1000,
@@ -101,27 +118,41 @@ export default function RouteStopEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clipUrl, routeId])
 
-  // Toggle drag-to-create-region mode based on whether a stop is armed
+  // Drag-to-create is always on — new regions auto-assign to the next unmarked stop
   useEffect(() => {
     const regions = regionsRef.current
-    if (!regions) return
-    if (armedStopId) {
-      const disable = regions.enableDragSelection({ color: REGION_COLOR_ARMED })
-      return () => disable()
-    }
-    return undefined
-  }, [armedStopId, ready])
+    if (!regions || !ready) return
+    const disable = regions.enableDragSelection({ color: REGION_COLOR })
+    return () => disable()
+  }, [ready])
 
   const togglePlay = () => wsRef.current?.playPause()
 
   const playStop = (stopId: string) => {
-    const region = regionByStopRef.current.get(stopId)
-    region?.play()
+    regionByStopRef.current.get(stopId)?.play(true)
   }
 
   const clearStop = (stopId: string) => {
     regionByStopRef.current.get(stopId)?.remove()
     regionByStopRef.current.delete(stopId)
+    refreshMarked()
+  }
+
+  const reassign = (fromStopId: string, toStopId: string) => {
+    setReassigningStopId(null)
+    if (fromStopId === toStopId) return
+    const region = regionByStopRef.current.get(fromStopId)
+    if (!region) return
+    const swapRegion = regionByStopRef.current.get(toStopId) ?? null
+
+    regionByStopRef.current.delete(fromStopId)
+    regionByStopRef.current.set(toStopId, region)
+    labelRegion(region, toStopId)
+
+    if (swapRegion) {
+      regionByStopRef.current.set(fromStopId, swapRegion)
+      labelRegion(swapRegion, fromStopId)
+    }
     refreshMarked()
   }
 
@@ -138,7 +169,8 @@ export default function RouteStopEditor({
     else showToast(result.error, 'error')
   }
 
-  const allMarked = stops.length > 0 && stops.every((s) => markedStopIds.has(s.stop_id))
+  const allMarked = sortedStops.length > 0 && sortedStops.every((s) => markedStopIds.has(s.stop_id))
+  const nextUnmarkedId = sortedStops.find((s) => !markedStopIds.has(s.stop_id))?.stop_id ?? null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -147,40 +179,58 @@ export default function RouteStopEditor({
           {playing ? 'Pause' : 'Play full clip'}
         </Button>
         {!ready && <Spinner size="small" />}
+        <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <MousePointerClick size={12} /> Drag on the waveform to mark stops · scroll to zoom
+        </Text>
         <div style={{ flex: 1 }} />
         <Button size="small" variant="primary" leadingVisual={Save} disabled={saving || markedStopIds.size === 0} onClick={saveAll}>
-          {saving ? 'Saving…' : `Save Timestamps (${markedStopIds.size}/${stops.length})`}
+          {saving ? 'Saving…' : `Save Timestamps (${markedStopIds.size}/${sortedStops.length})`}
         </Button>
       </div>
 
-      <div ref={containerRef} style={{ borderRadius: 6, overflow: 'hidden', border: '1px solid var(--borderColor-default)', background: 'var(--bgColor-inset)', padding: '4px 8px' }} />
+      <div style={{ borderRadius: 6, overflow: 'hidden', border: '1px solid var(--borderColor-default)', background: 'var(--bgColor-inset)', padding: '4px 8px' }}>
+        <div ref={containerRef} />
+        <div ref={timelineRef} />
+      </div>
 
-      {armedStopId && (
-        <Text sx={{ fontSize: 0, color: 'attention.fg', fontWeight: 'semibold' }}>
-          Drag across the waveform to mark "{stops.find((s) => s.stop_id === armedStopId)?.stop_name}"
+      {nextUnmarkedId && (
+        <Text sx={{ fontSize: 0, color: 'accent.fg' }}>
+          Next drag will mark: <strong>{sortedStops.find((s) => s.stop_id === nextUnmarkedId)?.stop_name}</strong>
         </Text>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {stops.map((stop) => {
+        {sortedStops.map((stop) => {
           const isMarked = markedStopIds.has(stop.stop_id)
-          const isArmed = armedStopId === stop.stop_id
+          const isNext = stop.stop_id === nextUnmarkedId
           return (
             <div key={stop.stop_id} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 6,
-              background: isArmed ? 'var(--bgColor-attention-muted)' : 'var(--bgColor-muted)',
-              border: '1px solid ' + (isArmed ? 'var(--borderColor-attention-emphasis)' : 'var(--borderColor-muted)')
+              background: isNext ? 'var(--bgColor-attention-muted)' : 'var(--bgColor-muted)',
+              border: '1px solid ' + (isNext ? 'var(--borderColor-attention-emphasis)' : 'var(--borderColor-muted)')
             }}>
               <MapPin size={14} style={{ color: isMarked ? 'var(--fgColor-accent)' : 'var(--fgColor-muted)', flexShrink: 0 }} />
               <Text sx={{ fontSize: 0, flex: 1, fontWeight: isMarked ? 'semibold' : 'normal' }}>{stop.stop_name}</Text>
-              {isMarked && (
-                <IconTextButton icon={Play} label="Play" onClick={() => playStop(stop.stop_id)} />
-              )}
-              <Button size="small" variant={isMarked ? 'default' : 'primary'} onClick={() => setArmedStopId(stop.stop_id)}>
-                {isMarked ? 'Re-mark' : 'Mark'}
-              </Button>
-              {isMarked && (
-                <Button size="small" variant="danger" leadingVisual={Trash2} onClick={() => clearStop(stop.stop_id)}>Clear</Button>
+
+              {isMarked ? (
+                <>
+                  <IconTextButton icon={Play} label="Play" onClick={() => playStop(stop.stop_id)} />
+                  {reassigningStopId === stop.stop_id ? (
+                    <Select size="small" defaultValue="" onChange={(e) => reassign(stop.stop_id, e.target.value)} onBlur={() => setReassigningStopId(null)}>
+                      <Select.Option value="" disabled>Reassign to…</Select.Option>
+                      {sortedStops.filter((s) => s.stop_id !== stop.stop_id).map((s) => (
+                        <Select.Option key={s.stop_id} value={s.stop_id}>{s.stop_name}</Select.Option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <IconTextButton icon={ArrowLeftRight} label="Reassign" onClick={() => setReassigningStopId(stop.stop_id)} />
+                  )}
+                  <Button size="small" variant="danger" leadingVisual={Trash2} onClick={() => clearStop(stop.stop_id)}>Clear</Button>
+                </>
+              ) : isNext ? (
+                <Text sx={{ fontSize: 0, color: 'attention.fg', fontWeight: 'semibold' }}>Up next</Text>
+              ) : (
+                <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Not marked</Text>
               )}
             </div>
           )
