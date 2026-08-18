@@ -11,9 +11,12 @@ interface ShiftFormData {
   name_bn: string
   sort_order: string
   inbound_depart_school: string
-  outbound_depart_school: string
+  inbound_arrive_stops: string
+  inbound_arrive_school: string
   school_start_time: string
   school_end_time: string
+  outbound_depart_school: string
+  outbound_arrive_stops: string
   gender_mode: GenderMode
   default_overload: string
 }
@@ -37,8 +40,24 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
 }) {
   const [form, setForm] = useState<ShiftFormData>(
     initial
-      ? { name: initial.name, name_bn: initial.name_bn ?? '', sort_order: String(initial.sort_order), inbound_depart_school: initial.inbound_depart_school ?? '', outbound_depart_school: initial.outbound_depart_school ?? '', school_start_time: initial.school_start_time ?? '', school_end_time: initial.school_end_time ?? '', gender_mode: initial.gender_mode, default_overload: String(initial.default_overload) }
-      : { name: '', name_bn: '', sort_order: '1', inbound_depart_school: '', outbound_depart_school: '', school_start_time: '', school_end_time: '', gender_mode: 'COMBINED', default_overload: '0' }
+      ? {
+          name: initial.name, name_bn: initial.name_bn ?? '', sort_order: String(initial.sort_order),
+          inbound_depart_school: initial.inbound_depart_school ?? '',
+          inbound_arrive_stops: initial.inbound_arrive_stops ?? '',
+          inbound_arrive_school: initial.inbound_arrive_school ?? '',
+          school_start_time: initial.school_start_time ?? '',
+          school_end_time: initial.school_end_time ?? '',
+          outbound_depart_school: initial.outbound_depart_school ?? '',
+          outbound_arrive_stops: initial.outbound_arrive_stops ?? '',
+          gender_mode: initial.gender_mode, default_overload: String(initial.default_overload)
+        }
+      : {
+          name: '', name_bn: '', sort_order: '1',
+          inbound_depart_school: '', inbound_arrive_stops: '', inbound_arrive_school: '',
+          school_start_time: '', school_end_time: '',
+          outbound_depart_school: '', outbound_arrive_stops: '',
+          gender_mode: 'COMBINED', default_overload: '0'
+        }
   )
 
   const set = (k: keyof ShiftFormData, v: string) => setForm((f) => ({ ...f, [k]: v }))
@@ -62,10 +81,19 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
 
       <div style={{ borderTop: '1px solid var(--borderColor-muted)', paddingTop: 16 }}>
         <Text sx={{ fontSize: 0, fontWeight: 'semibold', color: 'fg.muted', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 2 }}>Inbound (Pickup → School)</Text>
+        <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mb: 2 }}>Empty buses leave school, reach the stops, pick students up, then return — in that order.</Text>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <FormControl>
             <FormControl.Label>Buses Leave School</FormControl.Label>
             <TextInput type="time" value={form.inbound_depart_school} onChange={(e) => set('inbound_depart_school', e.target.value)} block />
+          </FormControl>
+          <FormControl>
+            <FormControl.Label>Buses Reach Stops (est.)</FormControl.Label>
+            <TextInput type="time" value={form.inbound_arrive_stops} onChange={(e) => set('inbound_arrive_stops', e.target.value)} block />
+          </FormControl>
+          <FormControl>
+            <FormControl.Label>Buses Back at School (deadline)</FormControl.Label>
+            <TextInput type="time" value={form.inbound_arrive_school} onChange={(e) => set('inbound_arrive_school', e.target.value)} block />
           </FormControl>
           <FormControl>
             <FormControl.Label>Classes Start</FormControl.Label>
@@ -76,6 +104,7 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
 
       <div style={{ borderTop: '1px solid var(--borderColor-muted)', paddingTop: 16 }}>
         <Text sx={{ fontSize: 0, fontWeight: 'semibold', color: 'fg.muted', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', mb: 2 }}>Outbound (School → Drops)</Text>
+        <Text sx={{ fontSize: 0, color: 'fg.muted', display: 'block', mb: 2 }}>Classes end, loaded buses leave school, then finish dropping students at their stops — in that order.</Text>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <FormControl>
             <FormControl.Label>Classes End</FormControl.Label>
@@ -84,6 +113,10 @@ function ShiftForm({ initial, onSubmit, onCancel, loading, error }: {
           <FormControl>
             <FormControl.Label>Buses Depart School</FormControl.Label>
             <TextInput type="time" value={form.outbound_depart_school} onChange={(e) => set('outbound_depart_school', e.target.value)} block />
+          </FormControl>
+          <FormControl>
+            <FormControl.Label>Buses Finish Drop-offs (deadline)</FormControl.Label>
+            <TextInput type="time" value={form.outbound_arrive_stops} onChange={(e) => set('outbound_arrive_stops', e.target.value)} block />
           </FormControl>
         </div>
       </div>
@@ -211,9 +244,12 @@ function parseShiftForm(form: ShiftFormData): CreateShiftInput {
     name: form.name.trim(), name_bn: form.name_bn.trim() || undefined,
     sort_order: parseInt(form.sort_order) || 1,
     inbound_depart_school: form.inbound_depart_school || undefined,
-    outbound_depart_school: form.outbound_depart_school || undefined,
+    inbound_arrive_stops: form.inbound_arrive_stops || undefined,
+    inbound_arrive_school: form.inbound_arrive_school || undefined,
     school_start_time: form.school_start_time || undefined,
     school_end_time: form.school_end_time || undefined,
+    outbound_depart_school: form.outbound_depart_school || undefined,
+    outbound_arrive_stops: form.outbound_arrive_stops || undefined,
     gender_mode: form.gender_mode,
     default_overload: parseInt(form.default_overload) || 0
   }
@@ -326,7 +362,9 @@ export default function ShiftManagement() {
                 <Heading as="h2" sx={{ fontSize: 3 }}>{selected.name}</Heading>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
                   {selected.inbound_depart_school && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Inbound depart: <Text sx={{ fontWeight: 'semibold' }}>{selected.inbound_depart_school}</Text></Text>}
+                  {selected.inbound_arrive_school && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Inbound arrive: <Text sx={{ fontWeight: 'semibold' }}>{selected.inbound_arrive_school}</Text></Text>}
                   {selected.outbound_depart_school && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Outbound depart: <Text sx={{ fontWeight: 'semibold' }}>{selected.outbound_depart_school}</Text></Text>}
+                  {selected.outbound_arrive_stops && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Outbound arrive: <Text sx={{ fontWeight: 'semibold' }}>{selected.outbound_arrive_stops}</Text></Text>}
                   <span style={{ fontSize: 12, background: 'var(--bgColor-muted)', border: '1px solid var(--borderColor-default)', borderRadius: 9999, padding: '2px 8px', color: 'var(--fgColor-muted)' }}>{selected.gender_mode}</span>
                   <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Overload: +{selected.default_overload}</Text>
                 </div>

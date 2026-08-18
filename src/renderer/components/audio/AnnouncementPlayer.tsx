@@ -173,7 +173,7 @@ export default function AnnouncementPlayer({ groups, label }: { groups: Announce
       </div>
 
       {currentLabel && <Text sx={{ fontSize: 0, color: 'fg.muted' }}>Now playing: {currentLabel}</Text>}
-      {!isComplete && <Text sx={{ fontSize: 0, color: 'attention.fg' }}>Missing recordings — finish them in Settings → Audio.</Text>}
+      {!isComplete && <Text sx={{ fontSize: 0, color: 'attention.fg' }}>Missing recordings, finish them in Audio tab in Settings.</Text>}
     </div>
   )
 }
