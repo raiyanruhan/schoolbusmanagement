@@ -15,7 +15,7 @@ type PlayOption = {
 export default function Dashboard() {
   const { stats, loadStats } = useSessionStore()
   const navigate = useNavigate()
-  const user = "Raiyan"
+  const user = "Admin"
   const [health, setHealth] = useState<SystemHealth | null>(null)
   const [announcements, setAnnouncements] = useState<AnnouncementGroup[]>([])
   const [selectedOption, setSelectedOption] = useState<PlayOption | null>(null)

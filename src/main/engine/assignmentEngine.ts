@@ -137,6 +137,12 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
         const found = findBestFitBus(busPool, studentCount, config.overload_limit)
 
         if (!found) {
+          // Report only THIS group's own headcount — not the stop's combined
+          // boys+girls total. In SEPARATED/AUTO mode a stop can fail for one
+          // gender while the other gender still gets a bus; reporting the
+          // full total here would both mislabel which gender is stranded and
+          // double-count the stop in summary.totalStudentsUnassigned if both
+          // gender groups happen to fail.
           segment.forEach((stop) => {
             unassignedStops.push({
               stop_id: stop.stop_id,
@@ -144,8 +150,8 @@ export function runAssignmentEngine(input: EngineInput): EngineOutput {
               route_id: route.id,
               route_name: route.name,
               reason: 'No available bus',
-              planned_boys: stop.planned_boys,
-              planned_girls: stop.planned_girls
+              planned_boys: group.gender === 'GIRLS' ? 0 : stop.planned_boys,
+              planned_girls: group.gender === 'BOYS' ? 0 : stop.planned_girls
             })
           })
           globalWarnings.push({

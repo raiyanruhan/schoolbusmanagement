@@ -2,6 +2,13 @@ import type Database from 'better-sqlite3'
 
 const MIGRATIONS: Array<{ version: number; sql: string }> = [
   {
+    version: 5,
+    sql: `
+      ALTER TABLE routes ADD COLUMN travel_time_inbound_min INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE routes ADD COLUMN travel_time_outbound_min INTEGER NOT NULL DEFAULT 0;
+    `
+  },
+  {
     version: 4,
     sql: `
       CREATE TABLE IF NOT EXISTS audio_clips (

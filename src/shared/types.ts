@@ -28,6 +28,9 @@ export interface Route {
   color: string
   is_active: number // SQLite stores boolean as 0/1
   notes: string | null
+  /** Estimated real-world drive time (minutes) for the full route, used by the assignment engine's arrival-deadline math. */
+  travel_time_inbound_min: number
+  travel_time_outbound_min: number
   created_at: string
   updated_at: string
 }
@@ -160,6 +163,8 @@ export interface CreateRouteInput {
   name_bn?: string
   color: string
   notes?: string
+  travel_time_inbound_min?: number
+  travel_time_outbound_min?: number
 }
 
 export interface UpdateRouteInput extends Partial<CreateRouteInput> {

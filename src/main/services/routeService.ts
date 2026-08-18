@@ -6,7 +6,9 @@ const CreateRouteSchema = z.object({
   name: z.string().min(1, 'Route name is required').max(100),
   name_bn: z.string().max(100).optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Invalid color hex'),
-  notes: z.string().max(500).optional()
+  notes: z.string().max(500).optional(),
+  travel_time_inbound_min: z.number().int().min(0).max(300).optional(),
+  travel_time_outbound_min: z.number().int().min(0).max(300).optional()
 })
 
 const UpdateRouteSchema = z.object({
@@ -15,7 +17,9 @@ const UpdateRouteSchema = z.object({
   name_bn: z.string().max(100).optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   is_active: z.boolean().optional(),
-  notes: z.string().max(500).optional()
+  notes: z.string().max(500).optional(),
+  travel_time_inbound_min: z.number().int().min(0).max(300).optional(),
+  travel_time_outbound_min: z.number().int().min(0).max(300).optional()
 })
 
 const CreateStopSchema = z.object({

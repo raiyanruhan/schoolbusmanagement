@@ -36,6 +36,8 @@ interface RouteFormData {
   name_bn: string;
   color: string;
   notes: string;
+  travel_time_inbound_min: string;
+  travel_time_outbound_min: string;
 }
 
 const COLORS = [
@@ -69,8 +71,10 @@ function RouteForm({
           name_bn: initial.name_bn ?? "",
           color: initial.color,
           notes: initial.notes ?? "",
+          travel_time_inbound_min: String(initial.travel_time_inbound_min ?? 0),
+          travel_time_outbound_min: String(initial.travel_time_outbound_min ?? 0),
         }
-      : { name: "", name_bn: "", color: "#3b82f6", notes: "" },
+      : { name: "", name_bn: "", color: "#3b82f6", notes: "", travel_time_inbound_min: "0", travel_time_outbound_min: "0" },
   );
   const set = (k: keyof RouteFormData, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -128,6 +132,36 @@ function RouteForm({
           ))}
         </div>
       </FormControl>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <FormControl>
+          <FormControl.Label>Inbound Travel Time (min)</FormControl.Label>
+          <TextInput
+            type="number"
+            min={0}
+            max={300}
+            value={form.travel_time_inbound_min}
+            onChange={(e) => set("travel_time_inbound_min", e.target.value)}
+            block
+          />
+          <FormControl.Caption>Full drive time, stops → school</FormControl.Caption>
+        </FormControl>
+        <FormControl>
+          <FormControl.Label>Outbound Travel Time (min)</FormControl.Label>
+          <TextInput
+            type="number"
+            min={0}
+            max={300}
+            value={form.travel_time_outbound_min}
+            onChange={(e) => set("travel_time_outbound_min", e.target.value)}
+            block
+          />
+          <FormControl.Caption>Full drive time, school → stops</FormControl.Caption>
+        </FormControl>
+      </div>
+      <Text sx={{ fontSize: 0, color: "fg.muted" }}>
+        Used to estimate real arrival times and trigger deadline warnings when auto-planning. An estimate — the system has no GPS.
+      </Text>
 
       <FormControl>
         <FormControl.Label>Notes</FormControl.Label>
@@ -328,12 +362,7 @@ export default function RouteManagement() {
   };
 
   // Route CRUD
-  const handleAddRoute = async (form: {
-    name: string;
-    name_bn: string;
-    color: string;
-    notes: string;
-  }) => {
+  const handleAddRoute = async (form: RouteFormData) => {
     setFormLoading(true);
     setFormError(null);
     const result = await window.api.route.create({
@@ -341,6 +370,8 @@ export default function RouteManagement() {
       name_bn: form.name_bn.trim() || undefined,
       color: form.color,
       notes: form.notes.trim() || undefined,
+      travel_time_inbound_min: parseInt(form.travel_time_inbound_min) || 0,
+      travel_time_outbound_min: parseInt(form.travel_time_outbound_min) || 0,
     });
     setFormLoading(false);
     if (result.success) {
@@ -350,12 +381,7 @@ export default function RouteManagement() {
     } else setFormError(result.error);
   };
 
-  const handleEditRoute = async (form: {
-    name: string;
-    name_bn: string;
-    color: string;
-    notes: string;
-  }) => {
+  const handleEditRoute = async (form: RouteFormData) => {
     if (!editRoute) return;
     setFormLoading(true);
     setFormError(null);
@@ -365,6 +391,8 @@ export default function RouteManagement() {
       name_bn: form.name_bn.trim() || undefined,
       color: form.color,
       notes: form.notes.trim() || undefined,
+      travel_time_inbound_min: parseInt(form.travel_time_inbound_min) || 0,
+      travel_time_outbound_min: parseInt(form.travel_time_outbound_min) || 0,
     });
     setFormLoading(false);
     if (result.success) {
@@ -723,6 +751,9 @@ export default function RouteManagement() {
                 <Label variant={selected.is_active ? "success" : "secondary"}>
                   {selected.is_active ? "Active" : "Inactive"}
                 </Label>
+                <Text sx={{ fontSize: 0, color: "fg.muted" }}>
+                  {selected.travel_time_inbound_min}min in · {selected.travel_time_outbound_min}min out
+                </Text>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <Button

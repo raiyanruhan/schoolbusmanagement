@@ -82,8 +82,11 @@ function buildEngineInputBase(input: {
 
     const stopsWithCount: StopWithCount[] = activeStops.map((stop) => {
       const config = stopConfigMap.get(stop.id)
-      const planned_boys = config?.planned_boys ?? 0
-      const planned_girls = config?.planned_girls ?? 0
+      // No config, or explicitly marked inactive for this shift, both mean
+      // "not used this shift" per the stop-config contract — must not leak
+      // stale counts into the engine just because a config row still exists.
+      const planned_boys = config?.is_active ? config.planned_boys : 0
+      const planned_girls = config?.is_active ? config.planned_girls : 0
       return {
         stop_id: stop.id,
         stop_name: stop.name,
@@ -99,6 +102,9 @@ function buildEngineInputBase(input: {
       name: route.name,
       name_bn: route.name_bn,
       color: route.color,
+      travel_time_minutes: input.direction === 'OUTBOUND'
+        ? route.travel_time_outbound_min
+        : route.travel_time_inbound_min,
       stops: stopsWithCount
     }
   })

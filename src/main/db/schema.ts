@@ -21,6 +21,9 @@ export const routes = sqliteTable('routes', {
   color:      text('color').notNull().default('#3b82f6'),
   is_active:  integer('is_active', { mode: 'boolean' }).notNull().default(true),
   notes:      text('notes'),
+  /** Estimated real-world drive time (minutes) for the full route, used by the assignment engine's arrival-deadline math. */
+  travel_time_inbound_min:  integer('travel_time_inbound_min').notNull().default(0),
+  travel_time_outbound_min: integer('travel_time_outbound_min').notNull().default(0),
   created_at: text('created_at').notNull(),
   updated_at: text('updated_at').notNull()
 })

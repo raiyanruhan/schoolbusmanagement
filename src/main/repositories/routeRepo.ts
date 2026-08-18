@@ -30,6 +30,8 @@ export const routeRepo = {
       color: input.color,
       is_active: true,
       notes: input.notes ?? null,
+      travel_time_inbound_min: input.travel_time_inbound_min ?? 0,
+      travel_time_outbound_min: input.travel_time_outbound_min ?? 0,
       created_at: ts,
       updated_at: ts
     }).run()
@@ -45,6 +47,8 @@ export const routeRepo = {
         ...(input.color !== undefined && { color: input.color }),
         ...(input.is_active !== undefined && { is_active: input.is_active }),
         ...(input.notes !== undefined && { notes: input.notes }),
+        ...(input.travel_time_inbound_min !== undefined && { travel_time_inbound_min: input.travel_time_inbound_min }),
+        ...(input.travel_time_outbound_min !== undefined && { travel_time_outbound_min: input.travel_time_outbound_min }),
         updated_at: ts
       })
       .where(eq(routes.id, input.id))
