@@ -15,7 +15,11 @@ export function detectConflicts(
   for (const b of buses) busMap.set(b.id, b)
 
   for (const run of runs) {
-    if (run.status === 'CANCELLED') continue
+    // Conflicts exist to prompt operator action on runs that haven't happened
+    // yet or are in progress. A COMPLETED run already happened safely — the
+    // bus's current status (e.g. retired months later) doesn't retroactively
+    // make history wrong, so don't keep flagging it forever.
+    if (run.status === 'CANCELLED' || run.status === 'COMPLETED') continue
 
     const bus = busMap.get(run.bus_id)
 
@@ -48,7 +52,11 @@ export function detectConflicts(
   // TIME_COLLISION: same bus assigned to overlapping runs (same session)
   const byBus = new Map<string, RunWithDetails[]>()
   for (const run of runs) {
-    if (run.status === 'CANCELLED') continue
+    // Conflicts exist to prompt operator action on runs that haven't happened
+    // yet or are in progress. A COMPLETED run already happened safely — the
+    // bus's current status (e.g. retired months later) doesn't retroactively
+    // make history wrong, so don't keep flagging it forever.
+    if (run.status === 'CANCELLED' || run.status === 'COMPLETED') continue
     if (!byBus.has(run.bus_id)) byBus.set(run.bus_id, [])
     byBus.get(run.bus_id)!.push(run)
   }
