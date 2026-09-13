@@ -179,19 +179,16 @@ Proprietary — all rights reserved by Hylith. Not licensed for redistribution.
 
 Built by [Hylith](https://hylith.com)
 
-<p>
-  <a href="https://github.com/raiyanruhan">
-    <img src="https://github.com/raiyanruhan.png" width="80" height="80" style="border-radius:50%" alt="Raiyan Bin Rashid" />
-    <br />Raiyan Bin Rashid
-  </a>
-  &nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/jotirmoy69">
-    <img src="https://github.com/jotirmoy69.png" width="80" height="80" style="border-radius:50%" alt="Jotirmoy Bhowmik" />
-    <br />Jotirmoy Bhowmik
-  </a>
-</p>
+* Raiyan Bin Rashid — [@raiyanruhan](https://github.com/raiyanruhan)
+* Jotirmoy Bhowmik — [@jotirmoy69](https://github.com/jotirmoy69)
 
 Project Link: [https://github.com/raiyanruhan/schoolbusmanagement](https://github.com/raiyanruhan/schoolbusmanagement)
+
+### Top contributors:
+
+<a href="https://github.com/raiyanruhan/schoolbusmanagement/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=raiyanruhan/schoolbusmanagement" alt="contrib.rocks image" />
+</a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
