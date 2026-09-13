@@ -15,6 +15,8 @@
     <br />
     <a href="https://github.com/raiyanruhan/schoolbusmanagement/releases/latest">Download Latest Release</a>
     &middot;
+    <a href="CHANGELOG.md">Changelog</a>
+    &middot;
     <a href="https://github.com/raiyanruhan/schoolbusmanagement/issues/new?labels=bug">Report Bug</a>
     &middot;
     <a href="https://github.com/raiyanruhan/schoolbusmanagement/issues/new?labels=enhancement">Request Feature</a>
@@ -41,6 +43,8 @@
     <li><a href="#usage">Usage</a></li>
     <li><a href="#building--releasing">Building &amp; Releasing</a></li>
     <li><a href="#auto-update">Auto-Update</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#security">Security</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
@@ -147,10 +151,26 @@ To mark a release mandatory for everyone below a given version, edit [`update-ma
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<!-- CONTRIBUTING -->
+## Contributing
+
+This is closed, proprietary software built for a specific school's operation — the repository isn't open to public contributions. If you're on the team, see [CONTRIBUTING.md](CONTRIBUTING.md) for project layout, conventions, and the release process.
+
+Please also review our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+<!-- SECURITY -->
+## Security
+
+If you discover a security vulnerability, please do not open a public issue. See [SECURITY.md](SECURITY.md) for how to report it responsibly.
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- LICENSE -->
 ## License
 
-Proprietary — all rights reserved by Hylith. Not licensed for redistribution.
+School Bus Manager is proprietary software. See [LICENSE](LICENSE).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
