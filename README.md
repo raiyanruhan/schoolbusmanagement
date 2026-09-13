@@ -179,8 +179,17 @@ Proprietary — all rights reserved by Hylith. Not licensed for redistribution.
 
 Built by [Hylith](https://hylith.com)
 
-* Raiyan Bin Rashid
-* Jotirmoy Bhowmik
+<p>
+  <a href="https://github.com/raiyanruhan">
+    <img src="https://github.com/raiyanruhan.png" width="80" height="80" style="border-radius:50%" alt="Raiyan Bin Rashid" />
+    <br />Raiyan Bin Rashid
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/jotirmoy69">
+    <img src="https://github.com/jotirmoy69.png" width="80" height="80" style="border-radius:50%" alt="Jotirmoy Bhowmik" />
+    <br />Jotirmoy Bhowmik
+  </a>
+</p>
 
 Project Link: [https://github.com/raiyanruhan/schoolbusmanagement](https://github.com/raiyanruhan/schoolbusmanagement)
 
