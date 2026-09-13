@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 2.0.1 — 2026-09-13
+
+* Licensed the source code under the Business Source License 1.1 (converts to MIT four years after each version's publication)
+* Added a proper End-User License Agreement (`EULA.txt`), shown and required during setup
+* Switched the Windows installer from one-click to a full wizard: Welcome → License Agreement → Choose Install Location → Install → Finish
+
 ## Version 2.0.0 — 2026-09-13
 
 * Added an auto-update pipeline: installed apps check GitHub Releases in the background and download quietly, with a dismissible banner for optional updates and a blocking restart screen for updates an author marks mandatory in `update-manifest.json`

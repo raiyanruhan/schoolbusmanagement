@@ -1,0 +1,95 @@
+SCHOOL BUS MANAGER
+END-USER LICENSE AGREEMENT
+
+This End-User License Agreement ("Agreement") is a legal agreement between
+you (the school or organization installing this software, "Licensee") and
+Hylith ("Licensor") for the software product School Bus Manager, including
+associated media, printed materials, and electronic documentation
+(the "Software").
+
+By installing, copying, or otherwise using the Software, you agree to be
+bound by the terms of this Agreement. If you do not agree to the terms of
+this Agreement, do not install or use the Software.
+
+1. GRANT OF LICENSE
+
+Subject to your compliance with this Agreement, Licensor grants you a
+non-exclusive, non-transferable, revocable license to install and use the
+Software on computers owned or controlled by your organization, solely for
+the purpose of managing your own school bus transportation operations.
+
+2. RESTRICTIONS
+
+You may not:
+
+  a. Sell, rent, lease, sublicense, distribute, or otherwise transfer the
+     Software, in whole or in part, to any third party;
+  b. Reverse engineer, decompile, or disassemble the Software, except to
+     the extent such restriction is prohibited by applicable law;
+  c. Remove or alter any copyright, trademark, or other proprietary notice
+     contained in the Software;
+  d. Use the Software to provide hosted, managed, or outsourced services
+     to any third party;
+  e. Use the Software for any purpose other than your own school bus
+     transportation operations without a separate written agreement with
+     Licensor.
+
+3. OWNERSHIP
+
+The Software is licensed, not sold. Licensor retains all right, title, and
+interest in and to the Software, including all intellectual property
+rights therein. This Agreement does not grant you any rights to
+trademarks, service marks, or logos of Licensor.
+
+4. UPDATES
+
+Licensor may make updates to the Software available from time to time, at
+its discretion. Some updates may be marked as required; continued use of
+the Software may depend on installing such updates. This Agreement applies
+to any updates that replace or supplement the original Software, unless
+accompanied by separate terms.
+
+5. DATA
+
+The Software stores all operational data locally, on the device on which
+it is installed. Licensor does not collect, transmit, or have access to
+this data. You are solely responsible for backing up and safeguarding your
+own data.
+
+6. TERM AND TERMINATION
+
+This Agreement is effective until terminated. Your rights under this
+Agreement terminate automatically, without notice from Licensor, if you
+fail to comply with any term of this Agreement. Upon termination, you must
+cease all use of the Software and uninstall it from all devices.
+
+7. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. LICENSOR DOES NOT
+WARRANT THAT THE SOFTWARE WILL BE UNINTERRUPTED OR ERROR-FREE.
+
+8. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
+LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
+PUNITIVE DAMAGES, OR ANY LOSS OF DATA, REVENUE, OR PROFITS, ARISING OUT OF
+OR IN CONNECTION WITH THIS AGREEMENT OR THE USE OF, OR INABILITY TO USE,
+THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+9. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire agreement between you and Licensor
+relating to the Software and supersedes all prior or contemporaneous
+understandings regarding such subject matter. Licensor may amend this
+Agreement at any time by providing an updated version with a future
+release of the Software.
+
+10. CONTACT
+
+Questions about this Agreement, or requests for a different licensing
+arrangement, may be directed to Hylith at https://hylith.com.
+
+By clicking "I Agree" during installation, you acknowledge that you have
+read this Agreement, understand it, and agree to be bound by its terms.

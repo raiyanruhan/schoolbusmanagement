@@ -170,7 +170,7 @@ If you discover a security vulnerability, please do not open a public issue. See
 <!-- LICENSE -->
 ## License
 
-School Bus Manager is proprietary software. See [LICENSE](LICENSE).
+The source code is source-available under the [Business Source License 1.1](LICENSE) — not an open source license; it converts to the MIT License four years after each version's publication. Installed copies of the app are additionally governed by the [End-User License Agreement](EULA.txt) shown during setup. For other licensing arrangements, contact [Hylith](https://hylith.com).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

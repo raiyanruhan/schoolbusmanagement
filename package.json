@@ -1,8 +1,9 @@
 {
   "name": "school-bus-manager",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "School Bus Management System — Offline Desktop",
   "private": true,
+  "license": "BUSL-1.1",
   "type": "module",
   "main": "out/main/index.js",
   "author": {
@@ -98,15 +99,18 @@
       "icon": "assets/icon.ico"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
       "perMachine": true,
-      "allowToChangeInstallationDirectory": false,
+      "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": false,
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico"
+      "uninstallerIcon": "assets/icon.ico",
+      "license": "EULA.txt",
+      "runAfterFinish": true,
+      "menuCategory": true
     },
     "publish": {
       "provider": "github",
