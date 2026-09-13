@@ -11,7 +11,8 @@ import type {
   RunDirection, AssignmentStrategy,
   EngineOutput, ProposedRun, BestPlanResult,
   Incident, AuditLog, Conflict, SystemHealth, CreateIncidentInput,
-  AudioClip, SaveAudioClipInput, RouteStopTimestamp, SaveStopTimestampsInput, AnnouncementGroup
+  AudioClip, SaveAudioClipInput, RouteStopTimestamp, SaveStopTimestampsInput, AnnouncementGroup,
+  UpdateStatus
 } from '../shared/types'
 
 // The API exposed to the renderer — strictly typed
@@ -158,6 +159,19 @@ const api = {
   window: {
     openDisplay: (params: { shift_id: string; direction: RunDirection }): Promise<void> =>
       ipcRenderer.invoke('window:openDisplay', params)
+  },
+
+  // ── Auto-update ────────────────────────────────────────────────────────
+  update: {
+    getStatus: (): Promise<UpdateStatus> => ipcRenderer.invoke('update:getStatus'),
+    check: (): Promise<void> => ipcRenderer.invoke('update:check'),
+    skip: (version: string): Promise<void> => ipcRenderer.invoke('update:skip', version),
+    installNow: (): Promise<void> => ipcRenderer.invoke('update:installNow'),
+    onEvent: (callback: (status: UpdateStatus) => void): (() => void) => {
+      const listener = (_e: unknown, status: UpdateStatus): void => callback(status)
+      ipcRenderer.on('update:event', listener)
+      return () => ipcRenderer.removeListener('update:event', listener)
+    }
   },
 
   // ── Excel import ───────────────────────────────────────────────────────

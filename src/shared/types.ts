@@ -1,3 +1,13 @@
+// ─── Auto-Update ───────────────────────────────────────────────────────────
+
+export type UpdateStatus =
+  | { state: 'checking' }
+  | { state: 'not-available' }
+  | { state: 'available'; version: string; mandatory: boolean; notes: string | null }
+  | { state: 'downloading'; version: string; mandatory: boolean; percent: number }
+  | { state: 'downloaded'; version: string; mandatory: boolean; notes: string | null }
+  | { state: 'error'; message: string }
+
 // ─── Enums ─────────────────────────────────────────────────────────────────
 
 export type BusStatus = 'ACTIVE' | 'MAINTENANCE' | 'RETIRED'

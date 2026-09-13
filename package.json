@@ -5,6 +5,14 @@
   "private": true,
   "type": "module",
   "main": "out/main/index.js",
+  "author": {
+    "name": "Hylith",
+    "url": "https://hylith.com"
+  },
+  "contributors": [
+    { "name": "Raiyan Bin Rashid" },
+    { "name": "Jotirmoy Bhowmik" }
+  ],
   "scripts": {
     "dev": "electron-vite dev",
     "build": "tsc --noEmit && electron-vite build",
@@ -60,19 +68,39 @@
   "build": {
     "appId": "com.schoolbus.manager",
     "productName": "School Bus Manager",
+    "copyright": "Copyright © 2026 Hylith (hylith.com)",
     "directories": {
       "output": "release"
     },
     "files": [
       "out/**/*",
-      "!out/**/*.map"
+      "!out/**/*.map",
+      "assets/images/**/*"
     ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "compression": "maximum",
+    "forceCodeSigning": false,
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.ico"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "oneClick": true,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
     },
     "publish": {
       "provider": "github",

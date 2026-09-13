@@ -1,18 +1,19 @@
-import { app, BrowserWindow, shell, ipcMain, protocol } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, protocol, nativeImage } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import electronUpdater from 'electron-updater'
-const { autoUpdater } = electronUpdater
 import { initDb, closeDb, getSqlite } from './db'
 import { seedInitialData } from './db/seed'
 import { registerAllIpcHandlers } from './ipc'
+import { initUpdater } from './services/updateService'
 
 // Serves recorded announcement clips (userData/data/audio/**) to the renderer.
 // Must be registered before app is ready.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'audio-file', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, bypassCSP: true, corsEnabled: true } }
 ])
+
+const appIcon = nativeImage.createFromPath(join(__dirname, '../../assets/images/hylith.png'))
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -23,6 +24,7 @@ function createWindow(): BrowserWindow {
     show: false,
     autoHideMenuBar: true,
     title: 'School Bus Manager',
+    icon: appIcon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
@@ -100,6 +102,7 @@ app.whenReady().then(() => {
       width: 1280,
       height: 800,
       title: 'School Bus — Display Board',
+      icon: appIcon,
       webPreferences: {
         preload: join(__dirname, '../preload/index.mjs'),
         sandbox: false,
@@ -114,7 +117,7 @@ app.whenReady().then(() => {
     }
   })
 
-  createWindow()
+  const mainWin = createWindow()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -122,12 +125,9 @@ app.whenReady().then(() => {
 
   // ── Auto-update ────────────────────────────────────────────────────────
   // Reads publish config baked into app-update.yml at build time (package.json
-  // build.publish). No-ops harmlessly if not packaged / not running from an
-  // installed build, so it's safe to just always call this.
-  if (!is.dev) {
-    autoUpdater.checkForUpdatesAndNotify()
-    setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 4 * 60 * 60 * 1000)
-  }
+  // build.publish). Checks + downloads happen silently in the background;
+  // the renderer decides what (if anything) to show — see updateStore.
+  initUpdater(mainWin)
 })
 
 app.on('window-all-closed', () => {
