@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.0.2 — 2026-09-13
+
+* Fixed GitHub releases publishing as drafts instead of going live — electron-builder defaults to `draft: true`; `build.publish.releaseType` is now explicitly set to `"release"`
+
 ## Version 2.0.1 — 2026-09-13
 
 * Licensed the source code under the Business Source License 1.1 (converts to MIT four years after each version's publication)
