@@ -1,10 +1,5 @@
 <a id="readme-top"></a>
 
-<!-- PROJECT SHIELDS -->
-[![Release][release-shield]][release-url]
-[![License: UNLICENSED][license-shield]][license-url]
-[![Platform][platform-shield]][platform-url]
-
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -46,7 +41,6 @@
     <li><a href="#usage">Usage</a></li>
     <li><a href="#building--releasing">Building &amp; Releasing</a></li>
     <li><a href="#auto-update">Auto-Update</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#license">License</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
@@ -153,20 +147,6 @@ To mark a release mandatory for everyone below a given version, edit [`update-ma
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Fleet, route, stop, and shift management
-- [x] Daily planner with automatic run assignment engine
-- [x] Incident tracking & conflict detection
-- [x] Display Board + voice announcements
-- [x] Auto-update pipeline (optional & mandatory)
-- [ ] Multi-school / multi-branch support
-
-See the [open issues](https://github.com/raiyanruhan/schoolbusmanagement/issues) for the full list.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 <!-- LICENSE -->
 ## License
 
@@ -193,12 +173,6 @@ Project Link: [https://github.com/raiyanruhan/schoolbusmanagement](https://githu
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
-[release-shield]: https://img.shields.io/github/v/release/raiyanruhan/schoolbusmanagement?style=for-the-badge
-[release-url]: https://github.com/raiyanruhan/schoolbusmanagement/releases
-[license-shield]: https://img.shields.io/badge/license-proprietary-lightgrey.svg?style=for-the-badge
-[license-url]: #license
-[platform-shield]: https://img.shields.io/badge/platform-windows-0078D6.svg?style=for-the-badge&logo=windows
-[platform-url]: #getting-started
 [Electron.js]: https://img.shields.io/badge/Electron-191970?style=for-the-badge&logo=electron&logoColor=white
 [Electron-url]: https://www.electronjs.org/
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
