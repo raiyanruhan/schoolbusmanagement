@@ -1,6 +1,6 @@
 {
   "name": "school-bus-manager",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "School Bus Management System — Offline Desktop",
   "private": true,
   "type": "module",
@@ -10,8 +10,12 @@
     "url": "https://hylith.com"
   },
   "contributors": [
-    { "name": "Raiyan Bin Rashid" },
-    { "name": "Jotirmoy Bhowmik" }
+    {
+      "name": "Raiyan Bin Rashid"
+    },
+    {
+      "name": "Jotirmoy Bhowmik"
+    }
   ],
   "scripts": {
     "dev": "electron-vite dev",
@@ -86,7 +90,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "assets/icon.ico"

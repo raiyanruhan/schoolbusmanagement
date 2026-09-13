@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Version 2.0.0 — 2026-09-13
 
 * Added an auto-update pipeline: installed apps check GitHub Releases in the background and download quietly, with a dismissible banner for optional updates and a blocking restart screen for updates an author marks mandatory in `update-manifest.json`
 * Replaced every default Electron icon (window, taskbar, installer, uninstaller) with the Hylith logo
