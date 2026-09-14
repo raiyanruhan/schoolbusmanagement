@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.0.3 — 2026-09-14
+
+* Fixed the app silently failing to open on some machines — startup errors (e.g. a native-module load failure) were previously swallowed, leaving background processes running with no window; startup is now wrapped so failures are logged to `fatal.log` in the app's data folder and shown in an error dialog
+
 ## Version 2.0.2 — 2026-09-13
 
 * Fixed GitHub releases publishing as drafts instead of going live — electron-builder defaults to `draft: true`; `build.publish.releaseType` is now explicitly set to `"release"`

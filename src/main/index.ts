@@ -1,6 +1,6 @@
-import { app, BrowserWindow, shell, ipcMain, protocol, nativeImage } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, protocol, nativeImage, dialog } from 'electron'
 import { join } from 'path'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, appendFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDb, closeDb, getSqlite } from './db'
 import { seedInitialData } from './db/seed'
@@ -51,17 +51,33 @@ function createWindow(): BrowserWindow {
   return win
 }
 
+function logFatal(err: unknown): void {
+  const msg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err)
+  try {
+    appendFileSync(join(app.getPath('userData'), 'fatal.log'), `[${new Date().toISOString()}] ${msg}\n\n`)
+  } catch {
+    // userData dir itself may be unwritable — nothing more we can do
+  }
+  dialog.showErrorBox('School Bus Manager failed to start', msg)
+}
+
+process.on('uncaughtException', (err) => {
+  logFatal(err)
+  app.quit()
+})
+
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.schoolbus.manager')
+  try {
+    electronApp.setAppUserModelId('com.schoolbus.manager')
 
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
 
-  // Initialize DB before registering IPC handlers
-  initDb()
-  seedInitialData(getSqlite())
-  registerAllIpcHandlers()
+    // Initialize DB before registering IPC handlers
+    initDb()
+    seedInitialData(getSqlite())
+    registerAllIpcHandlers()
 
   // ── audio-file:// protocol — serves recorded announcement clips ────────────
   const audioDir = join(app.getPath('userData'), 'data', 'audio')
@@ -123,11 +139,15 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 
-  // ── Auto-update ────────────────────────────────────────────────────────
-  // Reads publish config baked into app-update.yml at build time (package.json
-  // build.publish). Checks + downloads happen silently in the background;
-  // the renderer decides what (if anything) to show — see updateStore.
-  initUpdater(mainWin)
+    // ── Auto-update ──────────────────────────────────────────────────────
+    // Reads publish config baked into app-update.yml at build time (package.json
+    // build.publish). Checks + downloads happen silently in the background;
+    // the renderer decides what (if anything) to show — see updateStore.
+    initUpdater(mainWin)
+  } catch (err) {
+    logFatal(err)
+    app.quit()
+  }
 })
 
 app.on('window-all-closed', () => {
