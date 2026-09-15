@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 2.0.4 — 2026-09-15
+
+* Fixed the app crashing on first launch on a fresh install (`SqliteError: no such table: routes`) — migrations were declared newest-first and ran in that literal order, so v5 tried to `ALTER TABLE routes` before v1 had created it; migrations now run in ascending version order
+
 ## Version 2.0.3 — 2026-09-14
 
 * Fixed the app silently failing to open on some machines — startup errors (e.g. a native-module load failure) were previously swallowed, leaving background processes running with no window; startup is now wrapped so failures are logged to `fatal.log` in the app's data folder and shown in an error dialog

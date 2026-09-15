@@ -216,7 +216,8 @@ export function runMigrations(sqlite: Database.Database): void {
 
   const applied = new Set(getApplied.all().map((r) => r.version))
 
-  for (const migration of MIGRATIONS) {
+  const orderedMigrations = [...MIGRATIONS].sort((a, b) => a.version - b.version)
+  for (const migration of orderedMigrations) {
     if (applied.has(migration.version)) continue
 
     console.log(`[DB] Applying migration v${migration.version}`)
